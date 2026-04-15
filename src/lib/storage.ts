@@ -29,25 +29,26 @@ async function writeLocal(data: AppData) {
 
 // ---- VERCEL BLOB ----
 async function readBlob(): Promise<AppData> {
-  const { list, put } = await import('@vercel/blob')
+  const { list, put, getDownloadUrl } = await import('@vercel/blob')
 
   const { blobs } = await list({ prefix: BLOB_NAME })
   if (blobs.length === 0) {
     await put(BLOB_NAME, JSON.stringify(INITIAL_DATA), {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
     })
     return INITIAL_DATA
   }
 
-  const res = await fetch(blobs[0].url)
+  const downloadUrl = await getDownloadUrl(blobs[0].url)
+  const res = await fetch(downloadUrl)
   return res.json()
 }
 
 async function writeBlob(data: AppData) {
   const { put } = await import('@vercel/blob')
   await put(BLOB_NAME, JSON.stringify(data), {
-    access: 'public',
+    access: 'private',
     addRandomSuffix: false,
   })
 }

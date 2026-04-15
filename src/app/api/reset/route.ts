@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (isVercel) {
     const { put } = await import('@vercel/blob')
     await put('solidprono-data.json', JSON.stringify(freshData), {
-      access: 'public',
+      access: 'private',
       addRandomSuffix: false,
     })
   } else {

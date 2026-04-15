@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+@theme {
+  --color-raja-green: #006233;
+  --color-raja-green-light: #00843D;
+  --color-raja-green-dark: #004D28;
+  --color-raja-white: #FFFFFF;
+  --color-raja-dark: #0D1117;
+  --color-raja-dark-2: #161B22;
+  --color-raja-dark-3: #21262D;
+  --color-raja-gold: #D4A843;
+  --color-raja-gold-light: #E8C96A;
+  --color-raja-red: #DC2626;
+  --color-raja-orange: #F59E0B;
+  --color-raja-gray: #F6F8FA;
+  --color-raja-gray-2: #E5E7EB;
+  --color-raja-gray-dark: #8B949E;
+  --color-raja-text: #1F2937;
+  --color-raja-text-light: #6B7280;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #F6F8FA;
+  color: #1F2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #006233;
+  border-radius: 3px;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Card hover lift effect */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* Gradient backgrounds */
+.gradient-hero {
+  background: linear-gradient(135deg, #006233 0%, #004D28 50%, #0D1117 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #D4A843 0%, #E8C96A 100%);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Pulse animation for validation */
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+}
+.animate-highlight {
+  animation: highlight-pulse 0.6s ease-in-out 3;
+}

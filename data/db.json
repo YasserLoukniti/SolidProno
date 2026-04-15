@@ -1,0 +1,629 @@
+{
+  "matches": [
+    {
+      "journee": 16,
+      "adversaire": "Raja Casablanca vs FUS Rabat",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": "V"
+    },
+    {
+      "journee": 17,
+      "adversaire": "AS FAR vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": "D"
+    },
+    {
+      "journee": 18,
+      "adversaire": "Raja Casablanca vs Difaa El Jadida",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 19,
+      "adversaire": "MAS Fès vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 20,
+      "adversaire": "Raja Casablanca vs Wydad Casablanca",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 21,
+      "adversaire": "Olympique Dcheira vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 22,
+      "adversaire": "Kawkab Marrakech vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 23,
+      "adversaire": "Raja Casablanca vs UTS Rabat",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 24,
+      "adversaire": "Renaissance Zemamra vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 25,
+      "adversaire": "Raja Casablanca vs CODM Meknès",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 26,
+      "adversaire": "Yacoub El Mansour vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 27,
+      "adversaire": "Ittihad Tanger vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 28,
+      "adversaire": "Raja Casablanca vs RS Berkane",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 29,
+      "adversaire": "Raja Casablanca vs Hassania Agadir",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 30,
+      "adversaire": "Olympic Safi vs Raja Casablanca",
+      "lieu": "Extérieur",
+      "date": "À programmer",
+      "result": null
+    }
+  ],
+  "users": [
+    {
+      "id": "yasser-1776255081393",
+      "name": "Yasser",
+      "createdAt": "2026-04-15T12:11:21.393Z",
+      "predictions": {
+        "16": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "17": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "18": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "19": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "D"
+        },
+        "20": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "N"
+        },
+        "21": {
+          "best": "V",
+          "realistic": "N",
+          "worst": "D"
+        },
+        "22": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "23": {
+          "best": "D",
+          "realistic": "N",
+          "worst": "V"
+        },
+        "24": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "25": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "26": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "27": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "28": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "29": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "30": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    },
+    {
+      "id": "ahmed-1776255149977",
+      "name": "ahmed",
+      "createdAt": "2026-04-15T12:12:29.977Z",
+      "predictions": {
+        "16": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "N"
+        },
+        "17": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "D"
+        },
+        "18": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "D"
+        },
+        "19": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "20": {
+          "worst": "V",
+          "realistic": "D",
+          "best": "N"
+        },
+        "21": {
+          "worst": "V",
+          "realistic": "D",
+          "best": "N"
+        },
+        "22": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "23": {
+          "worst": "D",
+          "best": "N",
+          "realistic": "V"
+        },
+        "24": {
+          "realistic": "N",
+          "worst": "N",
+          "best": "V"
+        },
+        "25": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "26": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "27": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "28": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "29": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "30": {
+          "worst": "N",
+          "realistic": "N",
+          "best": "V"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    },
+    {
+      "id": "alialfiguigui-1776256370347",
+      "name": "AliAlfiguigui",
+      "createdAt": "2026-04-15T12:32:50.347Z",
+      "predictions": {
+        "16": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "17": {
+          "best": "V",
+          "realistic": "V",
+          "worst": "V"
+        },
+        "18": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "19": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "20": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "21": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "22": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "23": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "24": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "25": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "26": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "27": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "28": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "29": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "30": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    },
+    {
+      "id": "saad-1776256417695",
+      "name": "saad",
+      "createdAt": "2026-04-15T12:33:37.695Z",
+      "predictions": {
+        "16": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "17": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "18": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "19": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "20": {
+          "worst": "N",
+          "realistic": "D",
+          "best": "D"
+        },
+        "21": {
+          "worst": "N",
+          "realistic": "D",
+          "best": "D"
+        },
+        "22": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "N"
+        },
+        "23": {
+          "worst": "D",
+          "best": "D",
+          "realistic": "N"
+        },
+        "24": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "N"
+        },
+        "25": {
+          "worst": "N",
+          "realistic": "D",
+          "best": "D"
+        },
+        "26": {
+          "worst": "N",
+          "realistic": "N",
+          "best": "N"
+        },
+        "27": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "D"
+        },
+        "28": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "29": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "30": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "D"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    },
+    {
+      "id": "nassr-1776257155702",
+      "name": "nassr",
+      "createdAt": "2026-04-15T12:45:55.702Z",
+      "predictions": {
+        "16": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "17": {
+          "worst": "N",
+          "realistic": "N",
+          "best": "N"
+        },
+        "18": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "V"
+        },
+        "19": {
+          "worst": "N",
+          "realistic": "V",
+          "best": "N"
+        },
+        "20": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "V"
+        },
+        "21": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "22": {
+          "realistic": "N",
+          "best": "V",
+          "worst": "D"
+        },
+        "23": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "24": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "25": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "26": {
+          "worst": "V",
+          "realistic": "D",
+          "best": "N"
+        },
+        "27": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "28": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "29": {
+          "realistic": "V",
+          "best": "D",
+          "worst": "N"
+        },
+        "30": {
+          "worst": "V",
+          "realistic": "V",
+          "best": "D"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    },
+    {
+      "id": "adham-1776257764079",
+      "name": "Adham",
+      "createdAt": "2026-04-15T12:56:04.079Z",
+      "predictions": {
+        "17": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "18": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "N"
+        },
+        "19": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "20": {
+          "best": "D",
+          "realistic": "D",
+          "worst": "N"
+        },
+        "21": {
+          "worst": "N",
+          "realistic": "N",
+          "best": "D"
+        },
+        "22": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "23": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "24": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "25": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "V"
+        },
+        "26": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "V"
+        },
+        "27": {
+          "worst": "D",
+          "best": "D",
+          "realistic": "N"
+        },
+        "28": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "29": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        },
+        "30": {
+          "worst": "D",
+          "realistic": "D",
+          "best": "N"
+        }
+      },
+      "finalPosition": {
+        "worst": 8,
+        "realistic": 4,
+        "best": 1
+      }
+    }
+  ],
+  "actualPosition": null
+}

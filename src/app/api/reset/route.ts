@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
     await put('solidprono-data.json', JSON.stringify(freshData), {
       access: 'private',
       addRandomSuffix: false,
+      allowOverwrite: true,
     })
   } else {
     const fs = await import('fs')

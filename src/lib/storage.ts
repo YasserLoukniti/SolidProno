@@ -36,6 +36,7 @@ async function readBlob(): Promise<AppData> {
     const blob = await put(BLOB_NAME, JSON.stringify(INITIAL_DATA), {
       access: 'private',
       addRandomSuffix: false,
+      allowOverwrite: true,
     })
     return INITIAL_DATA
   }
@@ -53,6 +54,7 @@ async function writeBlob(data: AppData) {
   await put(BLOB_NAME, JSON.stringify(data), {
     access: 'private',
     addRandomSuffix: false,
+      allowOverwrite: true,
   })
 }
 

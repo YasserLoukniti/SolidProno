@@ -1,13 +1,10 @@
-import type { AppData, Match, User } from '@/types'
+import type { AppData, User } from '@/types'
 import { INITIAL_MATCHES } from '@/data/matches'
 
-// In production (Vercel), use KV. In dev, use local JSON file.
-const isVercel = process.env.VERCEL === '1' || process.env.KV_REST_API_URL
+const isVercel = process.env.VERCEL === '1' || process.env.BLOB_READ_WRITE_TOKEN
 
-async function getKV() {
-  const { kv } = await import('@vercel/kv')
-  return kv
-}
+const BLOB_NAME = 'solidprono-data.json'
+const INITIAL_DATA: AppData = { matches: INITIAL_MATCHES, users: [], actualPosition: null }
 
 // ---- LOCAL DEV (JSON file) ----
 import fs from 'fs'
@@ -18,41 +15,52 @@ function readLocal(): AppData {
   try {
     return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'))
   } catch {
-    const init: AppData = { matches: INITIAL_MATCHES, users: [], actualPosition: null }
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
-    fs.writeFileSync(DB_PATH, JSON.stringify(init, null, 2))
-    return init
+    fs.writeFileSync(DB_PATH, JSON.stringify(INITIAL_DATA, null, 2))
+    return INITIAL_DATA
   }
 }
 function writeLocal(data: AppData) {
   fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2))
 }
 
-// ---- VERCEL KV ----
-const KV_KEY = 'solidprono:data'
+// ---- VERCEL BLOB ----
+async function readBlob(): Promise<AppData> {
+  const { list, put } = await import('@vercel/blob')
+
+  // Check if our blob exists
+  const { blobs } = await list({ prefix: BLOB_NAME })
+  if (blobs.length === 0) {
+    // First time: create the blob with initial data
+    await put(BLOB_NAME, JSON.stringify(INITIAL_DATA), {
+      access: 'public',
+      addRandomSuffix: false,
+    })
+    return INITIAL_DATA
+  }
+
+  // Read the blob
+  const res = await fetch(blobs[0].url)
+  return res.json()
+}
+
+async function writeBlob(data: AppData) {
+  const { put } = await import('@vercel/blob')
+  await put(BLOB_NAME, JSON.stringify(data), {
+    access: 'public',
+    addRandomSuffix: false,
+  })
+}
 
 // ---- PUBLIC API ----
 export async function getData(): Promise<AppData> {
-  if (isVercel) {
-    const kv = await getKV()
-    const data = await kv.get<AppData>(KV_KEY)
-    if (!data) {
-      const init: AppData = { matches: INITIAL_MATCHES, users: [], actualPosition: null }
-      await kv.set(KV_KEY, init)
-      return init
-    }
-    return data
-  }
+  if (isVercel) return readBlob()
   return readLocal()
 }
 
 async function saveData(data: AppData) {
-  if (isVercel) {
-    const kv = await getKV()
-    await kv.set(KV_KEY, data)
-  } else {
-    writeLocal(data)
-  }
+  if (isVercel) await writeBlob(data)
+  else writeLocal(data)
 }
 
 export async function addUser(user: User) {

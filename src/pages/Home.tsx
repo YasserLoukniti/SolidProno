@@ -201,11 +201,12 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
 
       <div className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
         {/* Header */}
-        <div className="bg-raja-dark text-white text-[9px] uppercase tracking-wider font-semibold grid grid-cols-[28px_1fr_36px_36px_36px_44px] items-center px-3 py-2">
+        <div className="bg-raja-dark text-white text-[9px] uppercase tracking-wider font-semibold grid grid-cols-[28px_1fr_32px_32px_32px_32px_42px] items-center px-3 py-2">
           <span className="text-center">#</span>
           <span>Joueur</span>
           <span className="text-center">MJ</span>
           <span className="text-center text-green-400">R</span>
+          <span className="text-center text-amber-400">W/B</span>
           <span className="text-center text-red-400">X</span>
           <span className="text-center">PTS</span>
         </div>
@@ -215,6 +216,7 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
           const rank = idx + 1
           const mj = entry.matchScores.length
           const rWins = entry.matchScores.filter(ms => ms.realisticHit).length
+          const partialWins = entry.matchScores.filter(ms => !ms.realisticHit && ms.points > 0).length
           const losses = entry.matchScores.filter(ms => ms.points === 0).length
           const isTop3 = rank <= 3
 
@@ -222,7 +224,7 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
             <Link
               key={entry.userId}
               to="/leaderboard"
-              className={`grid grid-cols-[28px_1fr_36px_36px_36px_44px] items-center px-3 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
+              className={`grid grid-cols-[28px_1fr_32px_32px_32px_32px_42px] items-center px-3 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
                 idx < leaderboard.length - 1 ? 'border-b border-raja-gray-2/50' : ''
               } ${isTop3 ? 'bg-green-50/30' : ''}`}
             >
@@ -232,6 +234,7 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
               <span className="font-semibold text-raja-dark truncate">{entry.userName}</span>
               <span className="text-center text-raja-text-light">{mj}</span>
               <span className="text-center font-semibold text-green-600">{rWins}</span>
+              <span className="text-center font-semibold text-amber-600">{partialWins}</span>
               <span className="text-center font-semibold text-red-500">{losses}</span>
               <span className={`text-center font-black ${isTop3 ? 'text-raja-green' : 'text-raja-dark'}`}>{entry.totalPoints}</span>
             </Link>

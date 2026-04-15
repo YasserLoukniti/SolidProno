@@ -58,7 +58,7 @@ export default function Leaderboard() {
       <div className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
         {/* Header */}
         <div className="bg-raja-dark text-white text-[10px] uppercase tracking-wider font-semibold">
-          <div className="grid grid-cols-[32px_1fr_40px_40px_40px_40px_50px_1fr] sm:grid-cols-[40px_1fr_48px_48px_48px_48px_56px_1fr] items-center gap-0 px-3 py-2.5">
+          <div className="grid grid-cols-[28px_1fr_32px_32px_32px_32px_42px] sm:grid-cols-[36px_1fr_44px_44px_44px_44px_52px_100px] items-center gap-0 px-3 py-2.5">
             <span className="text-center">#</span>
             <span>Joueur</span>
             <span className="text-center" title="Matchs joues">MJ</span>
@@ -85,7 +85,7 @@ export default function Leaderboard() {
             <div key={entry.userId}>
               <button
                 onClick={() => setExpandedUser(isExpanded ? null : entry.userId)}
-                className={`w-full grid grid-cols-[32px_1fr_40px_40px_40px_40px_50px_1fr] sm:grid-cols-[40px_1fr_48px_48px_48px_48px_56px_1fr] items-center gap-0 px-3 py-3 text-sm transition-colors cursor-pointer hover:bg-gray-50 ${
+                className={`w-full grid grid-cols-[28px_1fr_32px_32px_32px_32px_42px] sm:grid-cols-[36px_1fr_44px_44px_44px_44px_52px_100px] items-center gap-0 px-3 py-3 text-sm transition-colors cursor-pointer hover:bg-gray-50 ${
                   idx < leaderboard.length - 1 ? 'border-b border-raja-gray-2/50' : ''
                 } ${isTop3 ? 'bg-green-50/30' : ''}`}
               >

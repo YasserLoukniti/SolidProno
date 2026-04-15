@@ -1,6 +1,6 @@
 // Map team names (as they appear in match.adversaire) to their logo paths
 const teamLogos: Record<string, string> = {
-  'RAJA': '/raja-logo.png',
+  'Raja Club Athletic': '/raja-logo.png',
   'FUS Rabat': '/logos/fus-rabat.png',
   'AS FAR': '/logos/as-far.png',
   'Difaa El Jadida': '/logos/difaa-el-jadida.png',
@@ -22,7 +22,7 @@ const teamLogos: Record<string, string> = {
 const flippedTeams = new Set(['Wydad Casablanca', 'AS FAR'])
 
 export function isRaja(teamName: string): boolean {
-  return teamName === 'RAJA'
+  return teamName === 'Raja Club Athletic'
 }
 
 export function isFlipped(teamName: string): boolean {

@@ -41,9 +41,11 @@ async function readBlob(): Promise<AppData> {
     return INITIAL_DATA
   }
 
-  // For private stores, fetch with the token
-  const res = await fetch(blobs[0].url, {
+  // Cache-bust + auth token for private store
+  const url = `${blobs[0].url}?t=${Date.now()}`
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    cache: 'no-store',
   })
   if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`)
   return res.json()

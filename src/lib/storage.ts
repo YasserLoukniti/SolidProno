@@ -1,74 +1,47 @@
 import type { AppData, User } from '@/types'
 import { INITIAL_MATCHES } from '@/data/matches'
+import { MongoClient } from 'mongodb'
 
-const isVercel = process.env.VERCEL === '1' || process.env.BLOB_READ_WRITE_TOKEN
-
-const BLOB_NAME = 'solidprono-data.json'
 const INITIAL_DATA: AppData = { matches: INITIAL_MATCHES, users: [], actualPosition: null }
 
-// ---- LOCAL DEV (JSON file) ----
-async function readLocal(): Promise<AppData> {
-  const fs = (await import('fs')).default
-  const path = (await import('path')).default
-  const dbPath = path.join(process.cwd(), 'data', 'db.json')
-  try {
-    return JSON.parse(fs.readFileSync(dbPath, 'utf-8'))
-  } catch {
-    fs.mkdirSync(path.dirname(dbPath), { recursive: true })
-    fs.writeFileSync(dbPath, JSON.stringify(INITIAL_DATA, null, 2))
-    return INITIAL_DATA
+// MongoDB connection (cached for serverless)
+let client: MongoClient | null = null
+
+async function getDb() {
+  const uri = process.env.MONGODB_URI
+  if (!uri) throw new Error('MONGODB_URI not set')
+
+  if (!client) {
+    client = new MongoClient(uri)
+    await client.connect()
   }
+  return client.db('solidprono')
 }
 
-async function writeLocal(data: AppData) {
-  const fs = (await import('fs')).default
-  const path = (await import('path')).default
-  const dbPath = path.join(process.cwd(), 'data', 'db.json')
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2))
-}
-
-// ---- VERCEL BLOB ----
-async function readBlob(): Promise<AppData> {
-  const { list, put } = await import('@vercel/blob')
-
-  const { blobs } = await list({ prefix: BLOB_NAME })
-  if (blobs.length === 0) {
-    const blob = await put(BLOB_NAME, JSON.stringify(INITIAL_DATA), {
-      access: 'private',
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    })
-    return INITIAL_DATA
-  }
-
-  // Cache-bust + auth token for private store
-  const url = `${blobs[0].url}?t=${Date.now()}`
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`)
-  return res.json()
-}
-
-async function writeBlob(data: AppData) {
-  const { put } = await import('@vercel/blob')
-  await put(BLOB_NAME, JSON.stringify(data), {
-    access: 'private',
-    addRandomSuffix: false,
-      allowOverwrite: true,
-  })
+async function getCollection() {
+  const db = await getDb()
+  return db.collection('appdata')
 }
 
 // ---- PUBLIC API ----
 export async function getData(): Promise<AppData> {
-  if (isVercel) return readBlob()
-  return readLocal()
+  const col = await getCollection()
+  const doc = await col.findOne({ _id: 'main' as unknown as import('mongodb').ObjectId })
+  if (!doc) {
+    await col.insertOne({ _id: 'main' as unknown as import('mongodb').ObjectId, ...INITIAL_DATA })
+    return INITIAL_DATA
+  }
+  const { _id, ...data } = doc
+  return data as unknown as AppData
 }
 
 async function saveData(data: AppData) {
-  if (isVercel) await writeBlob(data)
-  else await writeLocal(data)
+  const col = await getCollection()
+  await col.replaceOne(
+    { _id: 'main' as unknown as import('mongodb').ObjectId },
+    data,
+    { upsert: true }
+  )
 }
 
 export async function addUser(user: User) {

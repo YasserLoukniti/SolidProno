@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { INITIAL_MATCHES } from '@/data/matches'
 import type { AppData } from '@/types'
+import { MongoClient } from 'mongodb'
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'raja2026'
 
@@ -17,21 +18,13 @@ export async function POST(req: NextRequest) {
     actualPosition: null,
   }
 
-  // Detect environment
-  const isVercel = process.env.VERCEL === '1' || process.env.BLOB_READ_WRITE_TOKEN
-
-  if (isVercel) {
-    const { put } = await import('@vercel/blob')
-    await put('solidprono-data.json', JSON.stringify(freshData), {
-      access: 'private',
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    })
-  } else {
-    const fs = await import('fs')
-    const path = await import('path')
-    const dbPath = path.join(process.cwd(), 'data', 'db.json')
-    fs.writeFileSync(dbPath, JSON.stringify(freshData, null, 2))
+  const uri = process.env.MONGODB_URI
+  if (uri) {
+    const client = new MongoClient(uri)
+    await client.connect()
+    const col = client.db('solidprono').collection('appdata')
+    await col.replaceOne({ _id: 'main' as unknown as import('mongodb').ObjectId }, freshData, { upsert: true })
+    await client.close()
   }
 
   return NextResponse.json({ success: true, matchCount: freshData.matches.length })

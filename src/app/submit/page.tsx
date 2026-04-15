@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { fetchData, submitPredictions } from '@/api/client'
 import MatchCard from '@/components/MatchCard'
 import type { Result, Prediction, FinalPosition, Match } from '@/types'
-import { FaCheckCircle, FaLock, FaDice } from 'react-icons/fa'
+import { FaCheckCircle, FaLock } from 'react-icons/fa'
 
 export default function SubmitPredictions() {
   const router = useRouter()
@@ -36,22 +36,6 @@ export default function SubmitPredictions() {
   // Only unplayed matches are available for predictions
   const availableMatches = allMatches.filter(m => m.result === null)
   const playedMatches = allMatches.filter(m => m.result !== null)
-
-  const randomFill = () => {
-    const results: Result[] = ['V', 'N', 'D']
-    const pick = () => results[Math.floor(Math.random() * 3)]
-    const preds: Record<string, Prediction> = {}
-    for (const m of availableMatches) {
-      preds[String(m.journee)] = { worst: pick(), realistic: pick(), best: pick() }
-    }
-    setPredictions(preds)
-    setFinalPosition({
-      worst: Math.floor(Math.random() * 12) + 5,
-      realistic: Math.floor(Math.random() * 6) + 3,
-      best: Math.floor(Math.random() * 3) + 1,
-    })
-    if (!name) setName('Test' + Math.floor(Math.random() * 999))
-  }
 
   const handlePredictionChange = (journee: number, scenario: 'worst' | 'realistic' | 'best', value: Result) => {
     setPredictions(prev => ({
@@ -189,13 +173,6 @@ export default function SubmitPredictions() {
             placeholder="Ton prenom"
             className="flex-shrink-0 w-40 px-3 py-2 rounded-lg border border-raja-gray-2 bg-white focus:border-raja-green focus:outline-none text-sm font-medium"
           />
-          <button
-            onClick={randomFill}
-            className="shrink-0 p-2 rounded-lg bg-raja-dark text-white hover:bg-raja-dark-2 transition-colors cursor-pointer"
-            title="Remplir au hasard"
-          >
-            <FaDice className="w-4 h-4" />
-          </button>
           <div className="flex-1">
             <div className="flex items-center justify-between text-xs text-raja-text-light mb-1">
               <span>{completedCount}/{totalRequired}</span>

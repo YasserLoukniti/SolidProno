@@ -1,4 +1,4 @@
-import type { Match, User, UserScore, MatchScore, Result } from '../types'
+import type { Match, User, UserScore, MatchScore, Result } from '@/types'
 
 export function calculateUserScore(user: User, matches: Match[], actualPosition: number | null): UserScore {
   const matchScores: MatchScore[] = []

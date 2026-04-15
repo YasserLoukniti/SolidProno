@@ -1,9 +1,7 @@
-import type { AppData, Prediction, FinalPosition, User } from '../types'
-
-const BASE = '/api'
+import type { AppData, Prediction, FinalPosition, User } from '@/types'
 
 export async function fetchData(): Promise<AppData> {
-  const res = await fetch(`${BASE}/data`)
+  const res = await fetch('/api/data')
   if (!res.ok) throw new Error('Failed to fetch data')
   return res.json()
 }
@@ -13,20 +11,18 @@ export async function submitPredictions(
   predictions: Record<string, Prediction>,
   finalPosition: FinalPosition
 ): Promise<User> {
-  const res = await fetch(`${BASE}/submit`, {
+  const res = await fetch('/api/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, predictions, finalPosition }),
   })
-  if (res.status === 409) {
-    throw new Error('Ce prénom est déjà pris')
-  }
+  if (res.status === 409) throw new Error('Ce prenom est deja pris')
   if (!res.ok) throw new Error('Failed to submit')
   return res.json()
 }
 
 export async function adminLogin(password: string): Promise<{ success: boolean; token: string }> {
-  const res = await fetch(`${BASE}/admin/login`, {
+  const res = await fetch('/api/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
@@ -36,7 +32,7 @@ export async function adminLogin(password: string): Promise<{ success: boolean; 
 }
 
 export async function setMatchResult(journee: number, result: 'V' | 'N' | 'D' | null): Promise<void> {
-  const res = await fetch(`${BASE}/admin/result`, {
+  const res = await fetch('/api/admin/result', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ journee, result }),
@@ -45,7 +41,7 @@ export async function setMatchResult(journee: number, result: 'V' | 'N' | 'D' | 
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  const res = await fetch(`${BASE}/admin/delete-user`, {
+  const res = await fetch('/api/admin/delete-user', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId }),
@@ -54,7 +50,7 @@ export async function deleteUser(userId: string): Promise<void> {
 }
 
 export async function setFinalPosition(position: number | null): Promise<void> {
-  const res = await fetch(`${BASE}/admin/final-position`, {
+  const res = await fetch('/api/admin/final-position', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ position }),

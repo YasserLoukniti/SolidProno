@@ -1,4 +1,4 @@
-import type { Match } from '../types'
+import type { Match } from '@/types'
 
 export const INITIAL_MATCHES: Match[] = [
   { journee: 16, adversaire: "Raja Club Athletic vs FUS Rabat", lieu: "Domicile", date: "À programmer", result: null },

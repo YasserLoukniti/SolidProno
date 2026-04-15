@@ -1,4 +1,4 @@
-import { isRaja, isFlipped } from '../data/teams'
+import { isRaja, isFlipped } from '@/data/teams'
 
 interface Props {
   logo: string | null

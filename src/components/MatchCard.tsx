@@ -1,7 +1,7 @@
-import type { Match, Prediction, Result } from '../types'
+import type { Match, Prediction, Result } from '@/types'
 import PredictionSelector from './PredictionSelector'
 import TeamLogo from './TeamLogo'
-import { getMatchLogos, parseTeams } from '../data/teams'
+import { getMatchLogos, parseTeams } from '@/data/teams'
 
 interface Props {
   match: Match

@@ -4,6 +4,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { fetchData } from '../api/client'
 import type { AppData, Result } from '../types'
 import { getMatchLogos, parseTeams } from '../data/teams'
+import TeamLogo from '../components/TeamLogo'
 
 function Badge({ value, highlight }: { value: Result; highlight?: boolean }) {
   const cls = {
@@ -130,7 +131,7 @@ export default function Predictions() {
             {/* Teams */}
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 text-center">
-                {homeLogo && <img src={homeLogo} alt={home} className="w-12 h-12 mx-auto mb-1 object-contain" />}
+                {homeLogo && <TeamLogo logo={homeLogo} name={home} size="w-12 h-12" />}
                 <p className="text-white font-bold text-xs">{home}</p>
               </div>
               <div className="text-center">
@@ -147,7 +148,7 @@ export default function Predictions() {
                 )}
               </div>
               <div className="flex-1 text-center">
-                {awayLogo && <img src={awayLogo} alt={away} className="w-12 h-12 mx-auto mb-1 object-contain" />}
+                {awayLogo && <TeamLogo logo={awayLogo} name={away} size="w-12 h-12" />}
                 <p className="text-white font-bold text-xs">{away}</p>
               </div>
             </div>
@@ -296,12 +297,12 @@ export default function Predictions() {
                   {/* Teams + predictions */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {logos.homeLogo && <img src={logos.homeLogo} alt="" className="w-6 h-6 object-contain" />}
+                      {logos.homeLogo && <TeamLogo logo={logos.homeLogo} name={mHome} size="w-6 h-6" />}
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-raja-dark truncate">{mHome}</p>
                         <p className="text-xs font-medium text-raja-dark truncate">{mAway}</p>
                       </div>
-                      {logos.awayLogo && <img src={logos.awayLogo} alt="" className="w-6 h-6 object-contain" />}
+                      {logos.awayLogo && <TeamLogo logo={logos.awayLogo} name={mAway} size="w-6 h-6" />}
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">

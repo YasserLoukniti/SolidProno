@@ -4,6 +4,7 @@ import { fetchData } from '../api/client'
 import type { AppData, Result } from '../types'
 import { FaArrowLeft } from 'react-icons/fa'
 import { getMatchLogos, parseTeams } from '../data/teams'
+import TeamLogo from '../components/TeamLogo'
 
 function ScenarioBadge({ label, shortLabel, value, isMatch }: { label: string; shortLabel: string; value: Result | undefined; isMatch: boolean }) {
   if (!value) return null
@@ -75,13 +76,7 @@ export default function MatchDetail() {
 
         <div className="flex items-center justify-between gap-4 mt-4">
           <div className="flex-1 text-center">
-            {homeLogo ? (
-              <img src={homeLogo} alt={home} className="w-16 h-16 mx-auto mb-2 object-contain" />
-            ) : (
-              <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-white/70 text-xs font-bold">{home}</span>
-              </div>
-            )}
+            <div className="mb-2"><TeamLogo logo={homeLogo} name={home} /></div>
             <p className="text-white font-bold text-sm">{home}</p>
           </div>
 
@@ -105,13 +100,7 @@ export default function MatchDetail() {
           </div>
 
           <div className="flex-1 text-center">
-            {awayLogo ? (
-              <img src={awayLogo} alt={away} className="w-16 h-16 mx-auto mb-2 object-contain" />
-            ) : (
-              <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-white/10 flex items-center justify-center">
-                <span className="text-white/70 text-xs font-bold">{away}</span>
-              </div>
-            )}
+            <div className="mb-2"><TeamLogo logo={awayLogo} name={away} /></div>
             <p className="text-white font-bold text-sm">{away}</p>
           </div>
         </div>

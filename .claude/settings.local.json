@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "mcp__alienMcp__alien_screenshot",
+      "mcp__alienMcp__alien_tabs",
+      "mcp__alienMcp__alien_navigate"
+    ]
+  }
+}

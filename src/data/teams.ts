@@ -1,6 +1,6 @@
 // Map team names (as they appear in match.adversaire) to their logo paths
 const teamLogos: Record<string, string> = {
-  'Raja Casablanca': '/raja-logo.png',
+  'RAJA': '/raja-logo.png',
   'FUS Rabat': '/logos/fus-rabat.png',
   'AS FAR': '/logos/as-far.png',
   'Difaa El Jadida': '/logos/difaa-el-jadida.png',
@@ -18,17 +18,25 @@ const teamLogos: Record<string, string> = {
   'Olympic Safi': '/logos/olympic-safi.png',
 }
 
+// Teams whose logos should be flipped upside down
+const flippedTeams = new Set(['Wydad Casablanca', 'AS FAR'])
+
+export function isRaja(teamName: string): boolean {
+  return teamName === 'RAJA'
+}
+
+export function isFlipped(teamName: string): boolean {
+  return flippedTeams.has(teamName)
+}
+
 export function getTeamLogo(teamName: string): string | null {
-  // Try exact match first
   if (teamLogos[teamName]) return teamLogos[teamName]
-  // Try partial match
   for (const [key, val] of Object.entries(teamLogos)) {
     if (teamName.includes(key) || key.includes(teamName)) return val
   }
   return null
 }
 
-// Extract both team names from "Team A vs Team B"
 export function parseTeams(adversaire: string): { home: string; away: string } {
   const parts = adversaire.split(' vs ')
   return { home: parts[0]?.trim() ?? '', away: parts[1]?.trim() ?? '' }

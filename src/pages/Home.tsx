@@ -5,17 +5,7 @@ import { fetchData } from '../api/client'
 import { calculateLeaderboard } from '../data/scoring'
 import type { AppData, Match, User, UserScore } from '../types'
 import { getMatchLogos, parseTeams } from '../data/teams'
-
-function TeamLogo({ logo, name, size = 'w-16 h-16' }: { logo: string | null; name: string; size?: string }) {
-  if (logo) {
-    return <img src={logo} alt={name} className={`${size} mx-auto object-contain`} />
-  }
-  return (
-    <div className={`${size} mx-auto rounded-full bg-white/10 flex items-center justify-center`}>
-      <span className="text-white/70 text-[10px] font-bold text-center leading-tight px-1">{name}</span>
-    </div>
-  )
-}
+import TeamLogo from '../components/TeamLogo'
 
 function ResultTag({ value }: { value: 'V' | 'N' | 'D' }) {
   const cls = value === 'V'

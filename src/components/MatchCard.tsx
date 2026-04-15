@@ -1,5 +1,6 @@
 import type { Match, Prediction, Result } from '../types'
 import PredictionSelector from './PredictionSelector'
+import TeamLogo from './TeamLogo'
 import { getMatchLogos, parseTeams } from '../data/teams'
 
 interface Props {
@@ -59,12 +60,12 @@ export default function MatchCard({ match, prediction, onChange, readOnly, resul
 
       {/* Teams with logos */}
       <div className="px-4 py-3 flex items-center gap-3">
-        {homeLogo && <img src={homeLogo} alt={home} className="w-8 h-8 object-contain" />}
+        {homeLogo && <TeamLogo logo={homeLogo} name={home} size="w-8 h-8" />}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-raja-dark truncate">{home}</p>
           <p className="font-semibold text-sm text-raja-dark truncate">{away}</p>
         </div>
-        {awayLogo && <img src={awayLogo} alt={away} className="w-8 h-8 object-contain" />}
+        {awayLogo && <TeamLogo logo={awayLogo} name={away} size="w-8 h-8" />}
       </div>
 
       {/* Prediction selectors */}

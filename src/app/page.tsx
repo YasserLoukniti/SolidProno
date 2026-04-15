@@ -256,6 +256,7 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
 export default function Home() {
   const [data, setData] = useState<AppData | null>(null)
   const [leaderboard, setLeaderboard] = useState<UserScore[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
@@ -264,7 +265,19 @@ export default function Home() {
         setLeaderboard(calculateLeaderboard(d.users, d.matches, d.actualPosition))
       })
       .catch(console.error)
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <div className="flex flex-col items-center gap-3">
+          <img src="/raja-logo.png" alt="Raja CA" className="w-16 h-16 object-contain animate-pulse" />
+          <div className="w-6 h-6 border-3 border-raja-green border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    )
+  }
 
   const matchesPlayed = data?.matches.filter(m => m.result !== null).length ?? 0
   const totalMatches = data?.matches.length ?? 15

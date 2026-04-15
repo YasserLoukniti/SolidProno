@@ -187,35 +187,6 @@ function MatchCarousel({ matches, users }: { matches: Match[]; users: User[] }) 
 function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserScore[]; matchesPlayed: number }) {
   if (leaderboard.length === 0) return null
 
-  const maxPoints = leaderboard[0]?.totalPoints || 1
-
-  // Pas de match joué = classement vide, on montre juste les noms sans points
-  if (matchesPlayed === 0) {
-    return (
-      <section>
-        <div className="flex items-center gap-2 mb-3">
-          <FaTrophy className="w-3.5 h-3.5 text-raja-gold" />
-          <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide">Classement</h2>
-        </div>
-        <div className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
-          {leaderboard.map((entry, idx) => (
-            <div
-              key={entry.userId}
-              className={`flex items-center gap-3 px-4 py-3 ${idx < leaderboard.length - 1 ? 'border-b border-raja-gray-2/50' : ''}`}
-            >
-              <span className="w-6 text-center text-sm font-bold text-raja-text-light">{idx + 1}</span>
-              <span className="text-sm font-medium text-raja-dark flex-1">{entry.userName}</span>
-              <span className="text-sm text-raja-text-light">0 pts</span>
-            </div>
-          ))}
-          <div className="px-4 py-2.5 bg-gray-50 text-center">
-            <span className="text-[11px] text-raja-text-light">En attente du premier resultat</span>
-          </div>
-        </div>
-      </section>
-    )
-  }
-
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
@@ -224,48 +195,54 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
           <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide">Classement</h2>
         </div>
         <Link to="/leaderboard" className="text-xs text-raja-green font-medium hover:underline">
-          Voir tout
+          Details
         </Link>
       </div>
 
       <div className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
+        {/* Header */}
+        <div className="bg-raja-dark text-white text-[9px] uppercase tracking-wider font-semibold grid grid-cols-[28px_1fr_36px_36px_36px_44px] items-center px-3 py-2">
+          <span className="text-center">#</span>
+          <span>Joueur</span>
+          <span className="text-center">MJ</span>
+          <span className="text-center text-green-400">R</span>
+          <span className="text-center text-red-400">X</span>
+          <span className="text-center">PTS</span>
+        </div>
+
+        {/* Rows */}
         {leaderboard.map((entry, idx) => {
           const rank = idx + 1
-          const barWidth = maxPoints > 0 ? (entry.totalPoints / maxPoints) * 100 : 0
+          const mj = entry.matchScores.length
+          const rWins = entry.matchScores.filter(ms => ms.realisticHit).length
+          const losses = entry.matchScores.filter(ms => ms.points === 0).length
+          const isTop3 = rank <= 3
 
           return (
             <Link
               key={entry.userId}
               to="/leaderboard"
-              className={`flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
+              className={`grid grid-cols-[28px_1fr_36px_36px_36px_44px] items-center px-3 py-2.5 text-xs hover:bg-gray-50 transition-colors ${
                 idx < leaderboard.length - 1 ? 'border-b border-raja-gray-2/50' : ''
-              }`}
+              } ${isTop3 ? 'bg-green-50/30' : ''}`}
             >
-              {/* Rank */}
-              <span className={`w-6 text-center text-sm font-black ${
+              <span className={`text-center font-black ${
                 rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : rank === 3 ? 'text-amber-700' : 'text-raja-text-light'
-              }`}>
-                {rank}
-              </span>
-
-              {/* Name + bar */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-raja-dark truncate">{entry.userName}</span>
-                  <span className="text-sm font-black text-raja-green ml-2">{entry.totalPoints}</span>
-                </div>
-                <div className="w-full bg-raja-gray rounded-full h-1.5">
-                  <div
-                    className={`h-1.5 rounded-full transition-all ${
-                      rank === 1 ? 'bg-raja-gold' : 'bg-raja-green/40'
-                    }`}
-                    style={{ width: `${barWidth}%` }}
-                  />
-                </div>
-              </div>
+              }`}>{rank}</span>
+              <span className="font-semibold text-raja-dark truncate">{entry.userName}</span>
+              <span className="text-center text-raja-text-light">{mj}</span>
+              <span className="text-center font-semibold text-green-600">{rWins}</span>
+              <span className="text-center font-semibold text-red-500">{losses}</span>
+              <span className={`text-center font-black ${isTop3 ? 'text-raja-green' : 'text-raja-dark'}`}>{entry.totalPoints}</span>
             </Link>
           )
         })}
+
+        {matchesPlayed === 0 && (
+          <div className="px-4 py-2.5 bg-gray-50 text-center">
+            <span className="text-[11px] text-raja-text-light">En attente du premier resultat</span>
+          </div>
+        )}
       </div>
     </section>
   )

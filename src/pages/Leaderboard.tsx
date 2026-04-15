@@ -1,28 +1,14 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchData } from '../api/client'
 import { calculateLeaderboard } from '../data/scoring'
 import type { AppData, UserScore } from '../types'
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa'
 
-function Medal({ rank }: { rank: number }) {
-  if (rank <= 3) {
-    const config = {
-      1: { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-600', text: 'text-white', shadow: 'shadow-yellow-200' },
-      2: { bg: 'bg-gradient-to-br from-gray-300 to-gray-500', text: 'text-white', shadow: 'shadow-gray-200' },
-      3: { bg: 'bg-gradient-to-br from-amber-600 to-amber-800', text: 'text-white', shadow: 'shadow-amber-200' },
-    }
-    const c = config[rank as 1 | 2 | 3]
-    return (
-      <div className={`w-10 h-10 rounded-full ${c.bg} ${c.text} shadow-md ${c.shadow} flex items-center justify-center text-sm font-black`}>
-        {rank}
-      </div>
-    )
-  }
-  return (
-    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-raja-text-light">
-      {rank}
-    </div>
-  )
+function FormDot({ points }: { points: number }) {
+  if (points >= 4) return <span className="w-5 h-5 rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center">{points}</span>
+  if (points === 3) return <span className="w-5 h-5 rounded-full bg-green-500 text-white text-[9px] font-bold flex items-center justify-center">3</span>
+  if (points > 0) return <span className="w-5 h-5 rounded-full bg-amber-400 text-white text-[9px] font-bold flex items-center justify-center">{points}</span>
+  return <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">0</span>
 }
 
 export default function Leaderboard() {
@@ -55,121 +41,123 @@ export default function Leaderboard() {
     return (
       <div className="text-center py-20 max-w-6xl mx-auto px-4">
         <p className="text-raja-text-light text-lg">Aucun classement disponible.</p>
-        <p className="text-raja-text-light/60 text-sm mt-1">Les participants doivent d'abord soumettre leurs pronos.</p>
       </div>
     )
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-6">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-raja-dark">Classement</h1>
         <p className="text-raja-text-light text-sm mt-0.5">
-          {matchesPlayed} match{matchesPlayed > 1 ? 's' : ''} joué{matchesPlayed > 1 ? 's' : ''} sur {data?.matches.length ?? 15}
+          {matchesPlayed} match{matchesPlayed > 1 ? 's' : ''} joue{matchesPlayed > 1 ? 's' : ''} sur {data?.matches.length ?? 15}
         </p>
       </div>
 
-      {matchesPlayed === 0 && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm mb-6">
-          Aucun match joué. Le classement se met à jour après chaque résultat.
+      {/* Table style championnat */}
+      <div className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
+        {/* Header */}
+        <div className="bg-raja-dark text-white text-[10px] uppercase tracking-wider font-semibold">
+          <div className="grid grid-cols-[32px_1fr_40px_40px_40px_40px_50px_1fr] sm:grid-cols-[40px_1fr_48px_48px_48px_48px_56px_1fr] items-center gap-0 px-3 py-2.5">
+            <span className="text-center">#</span>
+            <span>Joueur</span>
+            <span className="text-center" title="Matchs joues">MJ</span>
+            <span className="text-center text-green-400" title="Realiste juste">R</span>
+            <span className="text-center text-amber-400" title="Worst/Best juste">W/B</span>
+            <span className="text-center text-red-400" title="Aucun bon">X</span>
+            <span className="text-center font-bold">PTS</span>
+            <span className="text-center hidden sm:block">Forme</span>
+          </div>
         </div>
-      )}
 
-      {/* Top 3 podium (if 3+ users) */}
-      {leaderboard.length >= 3 && matchesPlayed > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-8">
-          {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, idx) => {
-            const rank = idx === 0 ? 2 : idx === 1 ? 1 : 3
-            const isFirst = rank === 1
-            return (
-              <div
-                key={entry.userId}
-                className={`bg-white rounded-xl border text-center p-4 ${
-                  isFirst
-                    ? 'border-raja-gold/40 shadow-lg -mt-2 pb-6'
-                    : 'border-raja-gray-2 mt-4'
-                }`}
-              >
-                <Medal rank={rank} />
-                <p className={`font-bold mt-2 ${isFirst ? 'text-lg' : 'text-sm'} text-raja-dark`}>
-                  {entry.userName}
-                </p>
-                <p className={`font-black text-raja-green ${isFirst ? 'text-3xl' : 'text-xl'}`}>
-                  {entry.totalPoints}
-                </p>
-                <p className="text-[10px] text-raja-text-light uppercase tracking-wide font-medium">points</p>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Full list */}
-      <div className="space-y-2">
+        {/* Rows */}
         {leaderboard.map((entry, idx) => {
           const rank = idx + 1
+          const mj = entry.matchScores.length
+          const realisticWins = entry.matchScores.filter(ms => ms.realisticHit).length
+          const partialWins = entry.matchScores.filter(ms => !ms.realisticHit && ms.points > 0).length
+          const losses = entry.matchScores.filter(ms => ms.points === 0).length
+          const last5 = entry.matchScores.slice(-5)
           const isExpanded = expandedUser === entry.userId
+          const isTop3 = rank <= 3
 
           return (
-            <div key={entry.userId} className="bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
+            <div key={entry.userId}>
               <button
                 onClick={() => setExpandedUser(isExpanded ? null : entry.userId)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors cursor-pointer"
+                className={`w-full grid grid-cols-[32px_1fr_40px_40px_40px_40px_50px_1fr] sm:grid-cols-[40px_1fr_48px_48px_48px_48px_56px_1fr] items-center gap-0 px-3 py-3 text-sm transition-colors cursor-pointer hover:bg-gray-50 ${
+                  idx < leaderboard.length - 1 ? 'border-b border-raja-gray-2/50' : ''
+                } ${isTop3 ? 'bg-green-50/30' : ''}`}
               >
-                <Medal rank={rank} />
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-raja-dark text-sm">{entry.userName}</p>
-                  <p className="text-[10px] text-raja-text-light">
-                    {entry.matchScores.filter(ms => ms.points > 0).length} correct
-                    {entry.matchScores.filter(ms => ms.points > 0).length > 1 ? 's' : ''}
-                  </p>
+                {/* Rank */}
+                <span className={`text-center font-black text-sm ${
+                  rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-400' : rank === 3 ? 'text-amber-700' : 'text-raja-text-light'
+                }`}>
+                  {rank}
+                </span>
+
+                {/* Name */}
+                <span className={`font-semibold text-raja-dark truncate text-left ${isTop3 ? 'font-bold' : ''}`}>
+                  {entry.userName}
+                </span>
+
+                {/* MJ */}
+                <span className="text-center text-raja-text-light">{mj}</span>
+
+                {/* R (realistic wins) */}
+                <span className="text-center font-semibold text-green-600">{realisticWins}</span>
+
+                {/* W/B (partial wins) */}
+                <span className="text-center font-semibold text-amber-600">{partialWins}</span>
+
+                {/* X (losses) */}
+                <span className="text-center font-semibold text-red-500">{losses}</span>
+
+                {/* Points */}
+                <span className={`text-center font-black ${isTop3 ? 'text-raja-green text-base' : 'text-raja-dark'}`}>
+                  {entry.totalPoints}
+                </span>
+
+                {/* Form - last 5 */}
+                <div className="hidden sm:flex items-center justify-center gap-0.5">
+                  {last5.map((ms, i) => (
+                    <FormDot key={i} points={ms.points} />
+                  ))}
                 </div>
-                <div className="text-right mr-2">
-                  <p className="text-xl font-black text-raja-green">{entry.totalPoints}</p>
-                  <p className="text-[10px] text-raja-text-light">pts</p>
-                </div>
-                {isExpanded ? (
-                  <FaChevronUp className="w-4 h-4 text-raja-text-light" />
-                ) : (
-                  <FaChevronDown className="w-4 h-4 text-raja-text-light" />
-                )}
               </button>
 
+              {/* Expanded detail */}
               {isExpanded && (
-                <div className="border-t border-raja-gray-2 px-4 py-3 bg-gray-50/50">
-                  <div className="space-y-1.5">
+                <div className="border-t border-raja-gray-2 bg-gray-50/80 px-4 py-3">
+                  <div className="grid gap-1.5">
                     {entry.matchScores.map(ms => {
                       const match = data?.matches.find(m => m.journee === ms.journee)
                       return (
-                        <div key={ms.journee} className="flex items-center justify-between text-xs">
+                        <Link
+                          key={ms.journee}
+                          to={`/match/${ms.journee}`}
+                          className="flex items-center justify-between text-xs py-1.5 px-2 rounded hover:bg-white transition-colors"
+                        >
                           <div className="flex items-center gap-2">
-                            <span className="text-raja-text-light font-medium w-6">J{ms.journee}</span>
+                            <span className="text-raja-text-light font-bold w-7">J{ms.journee}</span>
                             <span className="text-raja-dark">{match?.adversaire}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            {ms.realisticHit && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-green-100 text-green-700">R +3</span>
-                            )}
-                            {ms.worstHit && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700">W +1</span>
-                            )}
-                            {ms.bestHit && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-100 text-amber-700">B +1</span>
-                            )}
-                            <span
-                              className={`font-bold ${
-                                ms.points >= 3 ? 'text-green-600' : ms.points > 0 ? 'text-orange-500' : 'text-gray-300'
-                              }`}
-                            >
+                            {ms.realisticHit && <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-green-100 text-green-700">R +3</span>}
+                            {ms.worstHit && <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700">W +1</span>}
+                            {ms.bestHit && <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-amber-100 text-amber-700">B +1</span>}
+                            <span className={`font-bold min-w-[24px] text-right ${
+                              ms.points >= 3 ? 'text-green-600' : ms.points > 0 ? 'text-amber-600' : 'text-red-400'
+                            }`}>
                               +{ms.points}
                             </span>
                           </div>
-                        </div>
+                        </Link>
                       )
                     })}
                     {entry.positionPoints > 0 && (
-                      <div className="flex items-center justify-between text-xs border-t border-raja-gray-2 pt-2 mt-2">
-                        <span className="text-raja-dark">Bonus classement</span>
+                      <div className="flex items-center justify-between text-xs border-t border-raja-gray-2 pt-2 mt-1 px-2">
+                        <span className="text-raja-dark font-medium">Bonus classement final</span>
                         <span className="font-bold text-raja-gold">+{entry.positionPoints}</span>
                       </div>
                     )}

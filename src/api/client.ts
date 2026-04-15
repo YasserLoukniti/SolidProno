@@ -1,7 +1,7 @@
 import type { AppData, Prediction, FinalPosition, User } from '@/types'
 
 export async function fetchData(): Promise<AppData> {
-  const res = await fetch('/api/data')
+  const res = await fetch('/api/data', { cache: 'no-store' })
   if (!res.ok) throw new Error('Failed to fetch data')
   return res.json()
 }

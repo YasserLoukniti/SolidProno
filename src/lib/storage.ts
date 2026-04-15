@@ -40,8 +40,11 @@ async function readBlob(): Promise<AppData> {
     return INITIAL_DATA
   }
 
-  // For private stores, use the downloadUrl provided by list()
-  const res = await fetch(blobs[0].downloadUrl)
+  // For private stores, fetch with the token
+  const res = await fetch(blobs[0].url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+  })
+  if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`)
   return res.json()
 }
 

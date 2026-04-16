@@ -148,34 +148,34 @@
           "best": "D"
         },
         "23": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "24": {
           "best": "D",
           "realistic": "N",
           "worst": "V"
         },
-        "24": {
+        "25": {
           "worst": "V",
           "realistic": "N",
           "best": "D"
-        },
-        "25": {
-          "worst": "D",
-          "realistic": "N",
-          "best": "V"
         },
         "26": {
-          "worst": "V",
-          "realistic": "N",
-          "best": "D"
-        },
-        "27": {
           "worst": "D",
           "realistic": "N",
           "best": "V"
         },
-        "28": {
+        "27": {
           "worst": "V",
           "realistic": "N",
           "best": "D"
+        },
+        "28": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
         },
         "29": {
           "worst": "V",
@@ -230,23 +230,23 @@
           "best": "N"
         },
         "22": {
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
+        },
+        "23": {
           "worst": "D",
           "realistic": "N",
           "best": "V"
         },
-        "23": {
+        "24": {
           "worst": "D",
           "best": "N",
           "realistic": "V"
         },
-        "24": {
+        "25": {
           "realistic": "N",
           "worst": "N",
-          "best": "V"
-        },
-        "25": {
-          "worst": "D",
-          "realistic": "N",
           "best": "V"
         },
         "26": {
@@ -255,9 +255,9 @@
           "best": "V"
         },
         "27": {
-          "worst": "V",
+          "worst": "D",
           "realistic": "N",
-          "best": "D"
+          "best": "V"
         },
         "28": {
           "worst": "V",
@@ -405,38 +405,38 @@
         },
         "22": {
           "worst": "D",
-          "realistic": "N",
+          "realistic": "D",
           "best": "N"
         },
         "23": {
           "worst": "D",
-          "best": "D",
-          "realistic": "N"
+          "realistic": "N",
+          "best": "N"
         },
         "24": {
           "worst": "D",
-          "realistic": "N",
-          "best": "N"
+          "best": "D",
+          "realistic": "N"
         },
         "25": {
-          "worst": "N",
-          "realistic": "D",
-          "best": "D"
+          "worst": "D",
+          "realistic": "N",
+          "best": "N"
         },
         "26": {
           "worst": "N",
-          "realistic": "N",
-          "best": "N"
-        },
-        "27": {
-          "worst": "D",
           "realistic": "D",
           "best": "D"
+        },
+        "27": {
+          "worst": "N",
+          "realistic": "N",
+          "best": "N"
         },
         "28": {
           "worst": "D",
           "realistic": "D",
-          "best": "N"
+          "best": "D"
         },
         "29": {
           "worst": "D",
@@ -491,39 +491,39 @@
           "best": "D"
         },
         "22": {
+          "worst": "D",
+          "realistic": "N",
+          "best": "V"
+        },
+        "23": {
           "realistic": "N",
           "best": "V",
           "worst": "D"
         },
-        "23": {
+        "24": {
           "worst": "V",
           "realistic": "N",
           "best": "D"
         },
-        "24": {
+        "25": {
           "worst": "D",
           "realistic": "N",
           "best": "V"
         },
-        "25": {
+        "26": {
           "worst": "V",
           "realistic": "N",
           "best": "D"
         },
-        "26": {
+        "27": {
           "worst": "V",
           "realistic": "D",
           "best": "N"
         },
-        "27": {
+        "28": {
           "worst": "V",
           "realistic": "N",
           "best": "D"
-        },
-        "28": {
-          "worst": "D",
-          "realistic": "N",
-          "best": "V"
         },
         "29": {
           "realistic": "V",
@@ -573,9 +573,9 @@
           "best": "D"
         },
         "22": {
-          "worst": "D",
-          "realistic": "D",
-          "best": "N"
+          "worst": "V",
+          "realistic": "N",
+          "best": "D"
         },
         "23": {
           "worst": "D",
@@ -590,7 +590,7 @@
         "25": {
           "worst": "D",
           "realistic": "D",
-          "best": "V"
+          "best": "N"
         },
         "26": {
           "worst": "D",
@@ -599,13 +599,13 @@
         },
         "27": {
           "worst": "D",
-          "best": "D",
-          "realistic": "N"
+          "realistic": "D",
+          "best": "V"
         },
         "28": {
-          "worst": "V",
-          "realistic": "N",
-          "best": "D"
+          "worst": "D",
+          "best": "D",
+          "realistic": "N"
         },
         "29": {
           "worst": "D",

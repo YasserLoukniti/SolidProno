@@ -57,3 +57,9 @@ export async function setFinalPosition(position: number | null): Promise<void> {
   })
   if (!res.ok) throw new Error('Failed to set position')
 }
+
+export async function syncMatches(): Promise<{ matchCount: number }> {
+  const res = await fetch('/api/admin/sync-matches', { method: 'POST' })
+  if (!res.ok) throw new Error('Failed to sync matches')
+  return res.json()
+}

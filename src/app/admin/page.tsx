@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { fetchData, adminLogin, setMatchResult, deleteUser, setFinalPosition } from '@/api/client'
+import { fetchData, adminLogin, setMatchResult, deleteUser, setFinalPosition, syncMatches } from '@/api/client'
 import type { AppData, Result } from '@/types'
-import { FaTrash, FaLock, FaSignOutAlt } from 'react-icons/fa'
+import { FaTrash, FaLock, FaSignOutAlt, FaSync } from 'react-icons/fa'
 
 export default function Admin() {
   const [authenticated, setAuthenticated] = useState(false)
@@ -57,6 +57,18 @@ export default function Admin() {
       setTimeout(() => setMessage(''), 2000)
     } catch {
       setMessage('Erreur')
+    }
+  }
+
+  const handleSyncMatches = async () => {
+    if (!confirm('Resynchroniser le calendrier des matchs depuis le code ? (les résultats déjà saisis sont conservés)')) return
+    try {
+      const { matchCount } = await syncMatches()
+      setMessage(`${matchCount} matchs synchronisés`)
+      loadData()
+      setTimeout(() => setMessage(''), 2000)
+    } catch {
+      setMessage('Erreur de synchronisation')
     }
   }
 
@@ -136,9 +148,18 @@ export default function Admin() {
 
       {/* Match results */}
       <section className="mb-8">
-        <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide mb-3">
-          Résultats des matchs
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide">
+            Résultats des matchs
+          </h2>
+          <button
+            onClick={handleSyncMatches}
+            className="flex items-center gap-1.5 text-xs font-semibold text-raja-text-light hover:text-raja-green transition-colors cursor-pointer"
+          >
+            <FaSync className="w-3 h-3" />
+            Resync calendrier
+          </button>
+        </div>
         <div className="space-y-2">
           {data.matches.map(match => {
             const parts = match.adversaire.split(' vs ')

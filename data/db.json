@@ -44,50 +44,50 @@
     },
     {
       "journee": 22,
+      "adversaire": "Raja Club Athletic vs RS Berkane",
+      "lieu": "Domicile",
+      "date": "À programmer",
+      "result": null
+    },
+    {
+      "journee": 23,
       "adversaire": "Kawkab Marrakech vs Raja Club Athletic",
       "lieu": "Extérieur",
       "date": "À programmer",
       "result": null
     },
     {
-      "journee": 23,
+      "journee": 24,
       "adversaire": "Raja Club Athletic vs UTS Rabat",
       "lieu": "Domicile",
       "date": "À programmer",
       "result": null
     },
     {
-      "journee": 24,
+      "journee": 25,
       "adversaire": "Renaissance Zemamra vs Raja Club Athletic",
       "lieu": "Extérieur",
       "date": "À programmer",
       "result": null
     },
     {
-      "journee": 25,
+      "journee": 26,
       "adversaire": "Raja Club Athletic vs CODM Meknès",
       "lieu": "Domicile",
       "date": "À programmer",
       "result": null
     },
     {
-      "journee": 26,
+      "journee": 27,
       "adversaire": "Yacoub El Mansour vs Raja Club Athletic",
       "lieu": "Extérieur",
       "date": "À programmer",
       "result": null
     },
     {
-      "journee": 27,
+      "journee": 28,
       "adversaire": "Ittihad Tanger vs Raja Club Athletic",
       "lieu": "Extérieur",
-      "date": "À programmer",
-      "result": null
-    },
-    {
-      "journee": 28,
-      "adversaire": "Raja Club Athletic vs RS Berkane",
-      "lieu": "Domicile",
       "date": "À programmer",
       "result": null
     },

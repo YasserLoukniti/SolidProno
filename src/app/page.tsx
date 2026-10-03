@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaFutbol, FaClock, FaChevronLeft, FaChevronRight, FaTrophy } from 'react-icons/fa'
 import { fetchData, fetchMe } from '@/api/client'
-import { calculateLeaderboard, formatScore, scorePrediction } from '@/data/scoring'
+import { EXACT_BONUS, ODDS_MULTIPLIER, calculateLeaderboard, formatScore, scorePrediction } from '@/data/scoring'
 import type { AppData, Match, Result, User, UserScore } from '@/types'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import TeamLogo from '@/components/TeamLogo'
 import HiddenPredictions from '@/components/HiddenPredictions'
+import OddsPills, { formatPoints } from '@/components/OddsPills'
 import { formatMatchDate, isOpenForPredictions, nextMatchIndex } from '@/data/dates'
 
 const RESULT_LABEL: Record<Result, string> = { V: 'Victoire', N: 'Nul', D: 'Défaite' }
@@ -124,6 +125,11 @@ function MatchCarousel({ matches, users, me }: { matches: Match[]; users: User[]
           </div>
         </div>
 
+        {/* Points en jeu (match joué : le résultat final est mis en avant) */}
+        <div className="mt-5">
+          <OddsPills match={match} highlight={match.result} variant="dark" />
+        </div>
+
         {/* Match ouvert : pronos cachés jusqu'au coup d'envoi */}
         {isOpen && (
           <div className="mt-5">
@@ -172,10 +178,10 @@ function MatchCarousel({ matches, users, me }: { matches: Match[]; users: User[]
                     <span className="text-[11px] italic text-white/30 whitespace-nowrap">Pas de prono</span>
                   )}
                   {isPlayed && (
-                    <span className={`w-8 text-right text-xs font-black ${
+                    <span className={`min-w-8 text-right text-xs font-black tabular-nums ${
                       ms.exactHit ? 'text-raja-gold' : ms.resultHit ? 'text-green-400' : 'text-white/20'
                     }`}>
-                      +{ms.points}
+                      {formatPoints(ms.points)}
                     </span>
                   )}
                 </div>
@@ -209,8 +215,8 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
           <span className="text-center">#</span>
           <span>Joueur</span>
           <span className="text-center">MJ</span>
-          <span className="text-center text-raja-gold" title="Score exact (+5)">SE</span>
-          <span className="text-center text-green-400" title="Bon résultat (+3)">BR</span>
+          <span className="text-center text-raja-gold" title={`Score exact (cote × ${ODDS_MULTIPLIER} + ${EXACT_BONUS})`}>SE</span>
+          <span className="text-center text-green-400" title={`Bon résultat (cote × ${ODDS_MULTIPLIER})`}>BR</span>
           <span className="text-center text-red-400" title="Raté ou pas de prono (0)">X</span>
           <span className="text-center">PTS</span>
         </div>

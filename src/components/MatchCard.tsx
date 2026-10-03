@@ -2,9 +2,10 @@ import type { ReactNode } from 'react'
 import type { Match, Prediction, Result } from '@/types'
 import ScoreInput from './ScoreInput'
 import TeamLogo from './TeamLogo'
+import OddsPills from './OddsPills'
 import { getMatchLogos, parseTeams, isRaja } from '@/data/teams'
 import { formatMatchDate } from '@/data/dates'
-import { formatScore, scoreToResult } from '@/data/scoring'
+import { EXACT_BONUS, formatScore, resultPoints, scoreToResult } from '@/data/scoring'
 
 // empty : pas de prono enregistré ni saisi · saved : saisie identique au prono enregistré · dirty : saisie non enregistrée
 export type MatchCardStatus = 'empty' | 'saved' | 'dirty'
@@ -111,19 +112,22 @@ export default function MatchCard({ match, prediction, onChange, readOnly, statu
         {renderTeam('away', away, awayLogo)}
       </div>
 
-      {/* Issue prédite pour le Raja */}
-      <div className="px-4 pb-3 flex justify-center">
-        {predictedResult ? (
-          <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${resultConfig[predictedResult].className}`}
-          >
-            {resultConfig[predictedResult].label} du Raja
-          </span>
-        ) : (
-          <span className="text-[10px] text-raja-text-light">
-            {readOnly ? 'Pas de prono' : 'Touche + / − pour pronostiquer'}
-          </span>
-        )}
+      {/* Points en jeu : la pastille du résultat pronostiqué est mise en avant */}
+      <div className="px-3 pb-3">
+        <OddsPills match={match} highlight={predictedResult} />
+        <p className="mt-2 text-center text-[11px] text-raja-text-light">
+          {predictedResult ? (
+            <>
+              Ce prono peut rapporter{' '}
+              <strong className="text-raja-dark">{resultPoints(match, predictedResult)} pts</strong>{' '}
+              <span className="text-raja-gold font-semibold">(+{EXACT_BONUS} si score exact)</span>
+            </>
+          ) : readOnly ? (
+            'Pas de prono'
+          ) : (
+            'Touche + / − pour pronostiquer'
+          )}
+        </p>
       </div>
 
       {children && <div className="border-t border-raja-gray-2 px-4 py-3">{children}</div>}

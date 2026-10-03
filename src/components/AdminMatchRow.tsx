@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import type { Lieu, Match, Result, Score } from '@/types'
+import type { Lieu, Match, Odds, Result, Score } from '@/types'
 import { OPPONENTS, RAJA, buildAdversaire, getOpponent, getTeamLogo, isFlipped } from '@/data/teams'
-import { formatMatchDate, parseMatchDate } from '@/data/dates'
-import { FaCheck, FaUndo } from 'react-icons/fa'
+import { formatMatchDate, kickoffTime, parseMatchDate } from '@/data/dates'
+import { DEFAULT_RESULT_POINTS, EXACT_BONUS, ODDS_MULTIPLIER, isValidOdds } from '@/data/scoring'
+import { FaCheck, FaLock, FaUndo } from 'react-icons/fa'
 
 export type MatchEdit = Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed'>
 
@@ -12,6 +13,8 @@ interface Props {
   match: Match
   onSave: (journee: number, edit: MatchEdit) => Promise<void>
   onSetScore: (journee: number, score: Score | null) => Promise<void>
+  // Renvoie le message d'erreur à afficher dans la ligne, ou null si l'enregistrement a réussi
+  onSetOdds: (journee: number, odds: Odds | null) => Promise<string | null>
 }
 
 export function TeamBadge({ name, size = 'w-9 h-9' }: { name: string; size?: string }) {
@@ -41,7 +44,35 @@ const RESULT_STYLES: Record<Result, { label: string; className: string }> = {
 
 const goalsInput = (value: string) => value.replace(/\D/g, '').slice(0, 2)
 
-export default function AdminMatchRow({ match, onSave, onSetScore }: Props) {
+type OddsInputs = Record<keyof Odds, string>
+
+const ODDS_FIELDS: { key: keyof Odds; label: string }[] = [
+  { key: 'win', label: 'Victoire Raja' },
+  { key: 'draw', label: 'Nul' },
+  { key: 'loss', label: 'Défaite Raja' },
+]
+
+// Saisie décimale : chiffres et un seul séparateur (virgule ou point), deux décimales max
+const oddInput = (value: string) => {
+  const cleaned = value.replace(/[^\d.,]/g, '')
+  const sep = cleaned.match(/[.,]/)?.[0]
+  const [int, ...rest] = cleaned.split(/[.,]/)
+  return sep ? `${int.slice(0, 3)}${sep}${rest.join('').slice(0, 2)}` : int.slice(0, 3)
+}
+
+// "1,70" ou "1.70" → 1.7 ; NaN si vide ou illisible
+const parseOdd = (value: string) => (value.trim() ? Number(value.replace(',', '.')) : NaN)
+
+const formatOdd = (odd: number) => odd.toFixed(2).replace('.', ',')
+
+const toOddsInputs = (odds: Odds | null): OddsInputs =>
+  odds
+    ? { win: formatOdd(odds.win), draw: formatOdd(odds.draw), loss: formatOdd(odds.loss) }
+    : { win: '', draw: '', loss: '' }
+
+const isValidOdd = (odd: number) => isValidOdds({ win: odd, draw: odd, loss: odd })
+
+export default function AdminMatchRow({ match, onSave, onSetScore, onSetOdds }: Props) {
   const initial = parseMatchDate(match.date)
   const [opponent, setOpponent] = useState(getOpponent(match.adversaire))
   const [lieu, setLieu] = useState<Lieu>(match.lieu)
@@ -51,6 +82,50 @@ export default function AdminMatchRow({ match, onSave, onSetScore }: Props) {
   const [saving, setSaving] = useState(false)
   const [homeGoals, setHomeGoals] = useState(match.score ? String(match.score.home) : '')
   const [awayGoals, setAwayGoals] = useState(match.score ? String(match.score.away) : '')
+
+  const [oddsInputs, setOddsInputs] = useState<OddsInputs>(() => toOddsInputs(match.odds))
+  const [savingOdds, setSavingOdds] = useState(false)
+  const [oddsError, setOddsError] = useState('')
+
+  // Le serveur refuse de modifier des cotes déjà saisies une fois le coup d'envoi passé
+  const kickoff = kickoffTime(match.date)
+  const kickoffPassed = kickoff !== null && Date.now() >= kickoff
+  const oddsFrozen = match.odds !== null && kickoffPassed
+  const shownOdds = oddsFrozen ? toOddsInputs(match.odds) : oddsInputs
+  const parsedOdds: Odds = {
+    win: parseOdd(shownOdds.win),
+    draw: parseOdd(shownOdds.draw),
+    loss: parseOdd(shownOdds.loss),
+  }
+  const oddsValid = isValidOdds(parsedOdds)
+  const savedOdds = match.odds
+  const oddsDirty =
+    !oddsFrozen &&
+    (savedOdds
+      ? ODDS_FIELDS.some(f => parsedOdds[f.key] !== savedOdds[f.key])
+      : ODDS_FIELDS.some(f => oddsInputs[f.key] !== ''))
+
+  const changeOdd = (key: keyof Odds, value: string) => {
+    setOddsInputs(prev => ({ ...prev, [key]: oddInput(value) }))
+    setOddsError('')
+  }
+
+  const resetOdds = () => {
+    setOddsInputs(toOddsInputs(match.odds))
+    setOddsError('')
+  }
+
+  const saveOdds = async (odds: Odds | null) => {
+    setSavingOdds(true)
+    setOddsError('')
+    try {
+      const error = await onSetOdds(match.journee, odds)
+      if (error) setOddsError(error)
+      else setOddsInputs(toOddsInputs(odds))
+    } finally {
+      setSavingOdds(false)
+    }
+  }
 
   const scoreComplete = homeGoals !== '' && awayGoals !== ''
   const scoreDirty = scoreComplete && (!match.score || Number(homeGoals) !== match.score.home || Number(awayGoals) !== match.score.away)
@@ -86,7 +161,7 @@ export default function AdminMatchRow({ match, onSave, onSetScore }: Props) {
   return (
     <div
       className={`bg-white rounded-xl border p-3 sm:p-4 transition-colors ${
-        dirty ? 'border-raja-gold ring-1 ring-raja-gold/40' : match.result ? 'border-green-200' : 'border-raja-gray-2'
+        dirty || oddsDirty ? 'border-raja-gold ring-1 ring-raja-gold/40' : match.result ? 'border-green-200' : 'border-raja-gray-2'
       }`}
     >
       {/* Header: journée, statut, affiche */}
@@ -217,6 +292,101 @@ export default function AdminMatchRow({ match, onSave, onSetScore }: Props) {
             <span className="text-xs text-raja-text-light py-2">{formatMatchDate(match.date, match.postponed)}</span>
           )}
         </div>
+      </div>
+
+      {/* Cotes : enregistrées à part, figées au coup d'envoi */}
+      <div className="mt-3 pt-3 border-t border-raja-gray-2">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mb-2">
+          <span className="text-[10px] font-semibold text-raja-text-light uppercase">Cotes</span>
+          {oddsFrozen ? (
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-raja-text-light">
+              <FaLock className="w-2.5 h-2.5" />
+              Figées au coup d&apos;envoi
+            </span>
+          ) : match.odds ? (
+            <span className="text-[10px] text-raja-text-light">
+              Bon résultat = cote × {ODDS_MULTIPLIER} · score exact +{EXACT_BONUS}
+            </span>
+          ) : (
+            <span className="text-[10px] text-orange-600">
+              {kickoffPassed
+                ? "Coup d'envoi passé : figées dès l'enregistrement"
+                : `Sans cotes : bon résultat = ${DEFAULT_RESULT_POINTS} pts`}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:flex-1 sm:max-w-lg">
+            {ODDS_FIELDS.map(({ key, label }) => {
+              const odd = parsedOdds[key]
+              const valid = isValidOdd(odd)
+              return (
+                <label key={key} className="min-w-0 flex flex-col gap-1">
+                  <span className="text-[10px] font-semibold text-raja-text-light uppercase truncate">{label}</span>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      inputMode="decimal"
+                      value={shownOdds[key]}
+                      disabled={oddsFrozen || savingOdds}
+                      onChange={e => changeOdd(key, e.target.value)}
+                      placeholder="1,70"
+                      className={`w-full min-w-0 px-2 py-1.5 rounded-lg border text-center text-sm font-bold focus:outline-none disabled:bg-raja-gray disabled:text-raja-text-light ${
+                        shownOdds[key] !== '' && !valid
+                          ? 'border-red-300 focus:border-red-500'
+                          : 'border-raja-gray-2 focus:border-raja-green'
+                      }`}
+                    />
+                    <span className={`shrink-0 w-11 text-[11px] font-semibold ${valid ? 'text-raja-green' : 'text-raja-text-light'}`}>
+                      {valid ? `${Math.round(odd * ODDS_MULTIPLIER)} pts` : '–'}
+                    </span>
+                  </div>
+                </label>
+              )
+            })}
+          </div>
+
+          {!oddsFrozen && (oddsDirty || match.odds) && (
+            <div className="flex items-center gap-1.5">
+              {oddsDirty && (
+                <button
+                  type="button"
+                  onClick={resetOdds}
+                  title="Annuler"
+                  className="px-3 py-2 rounded-lg border border-raja-gray-2 text-raja-text-light hover:text-raja-dark cursor-pointer"
+                >
+                  <FaUndo className="w-3 h-3" />
+                </button>
+              )}
+              {oddsDirty && oddsValid && (
+                <button
+                  type="button"
+                  onClick={() => saveOdds(parsedOdds)}
+                  disabled={savingOdds}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-raja-green text-white text-xs font-semibold hover:bg-raja-green-light disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                >
+                  <FaCheck className="w-3 h-3" />
+                  Enregistrer les cotes
+                </button>
+              )}
+              {oddsDirty && !oddsValid && (
+                <span className="flex-1 sm:flex-none text-[11px] text-raja-text-light">3 cotes entre 1,01 et 100</span>
+              )}
+              {match.odds && (
+                <button
+                  type="button"
+                  onClick={() => saveOdds(null)}
+                  disabled={savingOdds}
+                  className="px-1 py-2 text-xs text-raja-text-light hover:text-red-500 disabled:opacity-50 cursor-pointer"
+                >
+                  Effacer
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {oddsError && <p className="mt-2 text-xs text-red-600">{oddsError}</p>}
       </div>
 
       {/* Score final */}

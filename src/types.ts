@@ -8,6 +8,13 @@ export interface Score {
   away: number
 }
 
+// Cotes décimales des bookmakers, du point de vue du Raja
+export interface Odds {
+  win: number
+  draw: number
+  loss: number
+}
+
 export interface Match {
   journee: number
   adversaire: string
@@ -16,6 +23,8 @@ export interface Match {
   date: string | null
   // Match reporté par la Ligue ; garde sa journée, la nouvelle date est saisie dans `date`
   postponed: boolean
+  // Figées au coup d'envoi ; null tant qu'elles ne sont pas saisies
+  odds: Odds | null
   score: Score | null
   // Résultat du Raja, déduit du score à l'enregistrement
   result: Result | null

@@ -18,10 +18,11 @@ export async function POST(req: NextRequest) {
   const existingByJournee = new Map<number, Match>()
   for (const m of (doc?.matches ?? []) as Match[]) existingByJournee.set(m.journee, m)
 
-  // Garde les scores saisis ; le résultat est recalculé car le lieu peut avoir changé
+  // Garde les scores et cotes saisis ; le résultat est recalculé car le lieu peut avoir changé
   const newMatches = INITIAL_MATCHES.map(m => {
-    const score = existingByJournee.get(m.journee)?.score ?? m.score
-    return { ...m, score, result: score ? scoreToResult(score, m.lieu) : null }
+    const existing = existingByJournee.get(m.journee)
+    const score = existing?.score ?? m.score
+    return { ...m, odds: existing?.odds ?? m.odds, score, result: score ? scoreToResult(score, m.lieu) : null }
   })
 
   await col.updateOne(

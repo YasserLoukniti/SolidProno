@@ -3,7 +3,15 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fetchData } from '@/api/client'
-import { calculateLeaderboard, formatScore, isValidScore, POINTS_EXACT, POINTS_RESULT } from '@/data/scoring'
+import {
+  DEFAULT_RESULT_POINTS,
+  EXACT_BONUS,
+  ODDS_MULTIPLIER,
+  calculateLeaderboard,
+  formatScore,
+  isValidScore,
+} from '@/data/scoring'
+import { formatPoints } from '@/components/OddsPills'
 import type { AppData, MatchScore, UserScore } from '@/types'
 
 const GRID = 'grid-cols-[28px_1fr_40px_40px_40px] sm:grid-cols-[36px_1fr_56px_64px_64px_100px]'
@@ -12,25 +20,25 @@ function FormDot({ ms }: { ms: MatchScore }) {
   const base = 'w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center'
   if (ms.exactHit) return <span className={`${base} bg-raja-green ring-2 ring-raja-gold`}>{ms.points}</span>
   if (ms.resultHit) return <span className={`${base} bg-green-500`}>{ms.points}</span>
-  return <span className={`${base} bg-red-500`}>0</span>
+  return <span className={`${base} bg-red-500`}>{ms.points}</span>
 }
 
 function PointsBadge({ ms }: { ms: MatchScore }) {
   if (ms.exactHit) {
     return (
       <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-raja-green text-white">
-        Exact +{ms.points}
+        Exact {formatPoints(ms.points)}
       </span>
     )
   }
   if (ms.resultHit) {
     return (
       <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-green-100 text-green-700">
-        +{ms.points}
+        {formatPoints(ms.points)}
       </span>
     )
   }
-  return <span className="text-[10px] px-1.5 py-0.5 font-medium text-raja-text-light/60">0</span>
+  return <span className="text-[10px] px-1.5 py-0.5 font-medium text-raja-text-light/60">{formatPoints(ms.points)}</span>
 }
 
 export default function Leaderboard() {
@@ -76,9 +84,11 @@ export default function Leaderboard() {
         </p>
         {/* Rappel des règles */}
         <p className="text-raja-text-light text-xs mt-1">
-          Bon résultat <span className="font-semibold text-green-600">+{POINTS_RESULT}</span>
+          Bon résultat <span className="font-semibold text-green-600">cote × {ODDS_MULTIPLIER}</span>
           {' · '}
-          Score exact <span className="font-bold text-raja-green">+{POINTS_EXACT}</span>
+          Score exact <span className="font-bold text-raja-green">+{EXACT_BONUS} en plus</span>
+          {' · '}
+          Sans cote <span className="font-semibold">{DEFAULT_RESULT_POINTS} pts</span>
           {' · '}
           Pas de prono <span className="font-semibold">0</span>
         </p>

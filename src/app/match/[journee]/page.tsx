@@ -10,7 +10,8 @@ import { getMatchLogos, parseTeams } from '@/data/teams'
 import TeamLogo from '@/components/TeamLogo'
 import HiddenPredictions from '@/components/HiddenPredictions'
 import { formatMatchDate, isOpenForPredictions } from '@/data/dates'
-import { formatScore, scorePrediction } from '@/data/scoring'
+import { EXACT_BONUS, ODDS_MULTIPLIER, formatScore, scorePrediction } from '@/data/scoring'
+import OddsPills, { formatPoints } from '@/components/OddsPills'
 
 const RESULT_LABEL: Record<Result, string> = { V: 'Victoire', N: 'Nul', D: 'Défaite' }
 const RESULT_BG: Record<Result, string> = { V: 'bg-green-600', N: 'bg-orange-500', D: 'bg-red-600' }
@@ -122,6 +123,14 @@ export default function MatchDetail() {
             <p className="text-white font-bold text-sm">{away}</p>
           </div>
         </div>
+
+        {/* Points en jeu (match joué : le résultat final est mis en avant) */}
+        <div className="mt-5 max-w-md mx-auto">
+          <OddsPills match={match} highlight={match.result} variant="dark" />
+          <p className="mt-2 text-center text-[10px] text-white/40">
+            Bon résultat : cote × {ODDS_MULTIPLIER} · Score exact : +{EXACT_BONUS} en plus
+          </p>
+        </div>
       </div>
 
       {/* User predictions : cachés tant que le match est ouvert */}
@@ -189,7 +198,7 @@ export default function MatchDetail() {
                           : 'bg-gray-100 text-raja-text-light'
                       }`}
                     >
-                      +{ms.points} pt{ms.points > 1 ? 's' : ''}
+                      {formatPoints(ms.points)} pt{ms.points > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>

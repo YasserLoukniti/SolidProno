@@ -1,11 +1,19 @@
-import type { Lieu, Match, Result, Score, User, UserScore, MatchScore } from '@/types'
+import type { Lieu, Match, Odds, Result, Score, User, UserScore, MatchScore } from '@/types'
 
-export const POINTS_RESULT = 3
-export const POINTS_EXACT = 5
+// Bon résultat : cote × 10 ; score exact : bonus en plus
+export const ODDS_MULTIPLIER = 10
+export const EXACT_BONUS = 20
+// Points d'un bon résultat quand aucune cote n'a été saisie
+export const DEFAULT_RESULT_POINTS = 10
 
 export function isValidScore(score: unknown): score is Score {
   const s = score as Score
   return !!s && [s.home, s.away].every(g => Number.isInteger(g) && g >= 0 && g <= 20)
+}
+
+export function isValidOdds(odds: unknown): odds is Odds {
+  const o = odds as Odds
+  return !!o && [o.win, o.draw, o.loss].every(c => typeof c === 'number' && Number.isFinite(c) && c >= 1.01 && c <= 100)
 }
 
 // Résultat du point de vue du Raja
@@ -19,12 +27,20 @@ export function formatScore(score: Score): string {
   return `${score.home} - ${score.away}`
 }
 
+// Points rapportés par un bon résultat sur ce match
+export function resultPoints(match: Pick<Match, 'odds'>, result: Result): number {
+  if (!match.odds) return DEFAULT_RESULT_POINTS
+  const odd = result === 'V' ? match.odds.win : result === 'N' ? match.odds.draw : match.odds.loss
+  return Math.round(odd * ODDS_MULTIPLIER)
+}
+
 export function scorePrediction(pred: Score | undefined, match: Match): MatchScore {
   const miss = { journee: match.journee, points: 0, resultHit: false, exactHit: false }
   if (!pred || !match.score) return miss
+  const result = scoreToResult(match.score, match.lieu)
+  const resultHit = scoreToResult(pred, match.lieu) === result
   const exactHit = pred.home === match.score.home && pred.away === match.score.away
-  const resultHit = scoreToResult(pred, match.lieu) === scoreToResult(match.score, match.lieu)
-  const points = exactHit ? POINTS_EXACT : resultHit ? POINTS_RESULT : 0
+  const points = resultHit ? resultPoints(match, result) + (exactHit ? EXACT_BONUS : 0) : 0
   return { journee: match.journee, points, resultHit, exactHit }
 }
 

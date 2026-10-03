@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { fetchAdminData, adminLogin, adminLogout, updateMatch, deleteUser, syncMatches, resetSeason, SESSION_EXPIRED } from '@/api/client'
-import type { AppData, Match, Result, Score } from '@/types'
+import type { AppData, Match, Odds, Result, Score } from '@/types'
 import { OPPONENTS, RAJA, getOpponent, getTeamLogo } from '@/data/teams'
 import AdminMatchRow, { TeamBadge, type MatchEdit } from '@/components/AdminMatchRow'
 import { FaTrash, FaLock, FaSignOutAlt, FaSync, FaRedo } from 'react-icons/fa'
 
 type Tab = 'matchs' | 'equipes' | 'participants' | 'saison'
-type Filter = 'tous' | 'a-venir' | 'a-programmer' | 'reportes' | 'joues'
+type Filter = 'tous' | 'a-venir' | 'a-programmer' | 'sans-cotes' | 'reportes' | 'joues'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'matchs', label: 'Matchs' },
@@ -21,6 +21,7 @@ const FILTERS: { id: Filter; label: string; test: (m: Match) => boolean }[] = [
   { id: 'tous', label: 'Tous', test: () => true },
   { id: 'a-venir', label: 'À venir', test: m => m.result === null },
   { id: 'a-programmer', label: 'À programmer', test: m => m.result === null && !m.date },
+  { id: 'sans-cotes', label: 'Sans cotes', test: m => m.result === null && m.odds === null },
   { id: 'reportes', label: 'Reportés', test: m => m.result === null && m.postponed },
   { id: 'joues', label: 'Joués', test: m => m.result !== null },
 ]
@@ -102,6 +103,24 @@ export default function Admin() {
     }
   }
 
+  // L'erreur est renvoyée à la ligne du match pour être affichée sous les cotes (ex. cotes figées)
+  const handleSetOdds = async (journee: number, odds: Odds | null): Promise<string | null> => {
+    try {
+      await updateMatch(journee, { odds })
+      flash(odds ? `Cotes J${journee} enregistrées` : `Cotes J${journee} effacées`)
+      loadData()
+      return null
+    } catch (e) {
+      if (e instanceof Error && e.message === SESSION_EXPIRED) {
+        fail(e, '')
+        return null
+      }
+      return e instanceof Error && e.message !== 'Failed to update match'
+        ? e.message
+        : `Erreur lors de l'enregistrement des cotes de J${journee}`
+    }
+  }
+
   const handleDeleteUser = async (userId: string, name: string) => {
     if (!confirm(`Supprimer ${name} ?`)) return
     try {
@@ -179,6 +198,7 @@ export default function Admin() {
 
   const played = data.matches.filter(m => m.result !== null)
   const toSchedule = data.matches.filter(m => m.result === null && !m.date)
+  const withoutOdds = data.matches.filter(m => m.result === null && m.odds === null)
   const record = (['V', 'N', 'D'] as Result[]).map(r => played.filter(m => m.result === r).length)
   const activeFilter = FILTERS.find(f => f.id === filter)!
   const visibleMatches = data.matches.filter(activeFilter.test)
@@ -204,14 +224,16 @@ export default function Admin() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
         {[
           { value: `${played.length}/${data.matches.length}`, label: 'Matchs joués' },
           { value: `${record[0]}V ${record[1]}N ${record[2]}D`, label: 'Bilan' },
           { value: toSchedule.length, label: 'À programmer' },
+          { value: withoutOdds.length, label: 'Sans cotes' },
           { value: data.users.length, label: 'Participants' },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-xl border border-raja-gray-2 p-3 text-center">
+          // 5 cases : la dernière prend toute la largeur sur mobile (2 colonnes)
+          <div key={s.label} className="bg-white rounded-xl border border-raja-gray-2 p-3 text-center last:col-span-2 sm:last:col-span-1">
             <p className="text-lg font-bold text-raja-dark">{s.value}</p>
             <p className="text-[10px] text-raja-text-light uppercase tracking-wide font-medium">{s.label}</p>
           </div>
@@ -273,6 +295,7 @@ export default function Admin() {
                     match={match}
                     onSave={handleSaveMatch}
                     onSetScore={handleSetScore}
+                    onSetOdds={handleSetOdds}
                   />
                 ))}
               </div>

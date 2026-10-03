@@ -5,7 +5,15 @@ import { clearUserToken, fetchData, fetchMe, login, register, savePrediction } f
 import MatchCard, { type MatchCardStatus } from '@/components/MatchCard'
 import TeamLogo from '@/components/TeamLogo'
 import type { Match, Prediction, User } from '@/types'
-import { POINTS_RESULT, POINTS_EXACT, calculateUserScore, formatScore, scorePrediction } from '@/data/scoring'
+import {
+  DEFAULT_RESULT_POINTS,
+  EXACT_BONUS,
+  ODDS_MULTIPLIER,
+  calculateUserScore,
+  formatScore,
+  scorePrediction,
+} from '@/data/scoring'
+import { formatPoints } from '@/components/OddsPills'
 import { formatMatchDate, isOpenForPredictions, kickoffTime } from '@/data/dates'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import {
@@ -47,13 +55,13 @@ function Rules() {
   return (
     <div className="bg-white rounded-xl border border-raja-gray-2 px-4 py-3 text-center">
       <p className="text-sm text-raja-text-light">
-        Bon résultat : <strong className="text-green-600">+{POINTS_RESULT} pts</strong>
+        Bon résultat : <strong className="text-green-600">cote × {ODDS_MULTIPLIER}</strong>
         <span className="mx-2 text-raja-gray-2">·</span>
-        Score exact : <strong className="text-raja-gold">+{POINTS_EXACT} pts</strong>
+        Score exact : <strong className="text-raja-gold">+{EXACT_BONUS} en plus</strong>
       </p>
       <p className="text-[10px] text-raja-text-light mt-1">
-        Non cumulable : un score exact rapporte {POINTS_EXACT} pts au total. Pas de prono = 0 pt.
-        Modifiable jusqu&apos;au coup d&apos;envoi.
+        Plus le résultat est improbable, plus il rapporte. Sans cote publiée, bon résultat = {DEFAULT_RESULT_POINTS} pts.
+        Cotes figées et prono modifiable jusqu&apos;au coup d&apos;envoi. Pas de prono = 0 pt.
       </p>
     </div>
   )
@@ -265,11 +273,11 @@ function ClosedMatchRow({ match, prediction }: { match: Match; prediction?: Pred
   const pointsBadge = !match.score ? (
     <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-raja-gray text-raja-text-light">En attente</span>
   ) : ms.exactHit ? (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-raja-gold/15 text-raja-gold">+{ms.points} · exact</span>
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-raja-gold text-raja-dark">{formatPoints(ms.points)} · exact</span>
   ) : ms.resultHit ? (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">+{ms.points} · résultat</span>
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">{formatPoints(ms.points)} · résultat</span>
   ) : (
-    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-raja-gray text-raja-text-light">0 pt</span>
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-raja-gray text-raja-text-light">{formatPoints(ms.points)}</span>
   )
 
   return (

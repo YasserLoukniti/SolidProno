@@ -88,7 +88,7 @@ export async function adminLogin(password: string): Promise<{ success: boolean; 
 
 export async function updateMatch(
   journee: number,
-  update: Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'score'>>
+  update: Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'odds' | 'score'>>
 ): Promise<void> {
   const res = await fetch('/api/admin/match', {
     method: 'POST',
@@ -96,7 +96,11 @@ export async function updateMatch(
     body: JSON.stringify({ journee, ...update }),
   })
   assertAdminResponse(res)
-  if (!res.ok) throw new Error('Failed to update match')
+  if (!res.ok) {
+    // Remonte le message du serveur (ex. cotes figées au coup d'envoi) quand il y en a un
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? 'Failed to update match')
+  }
 }
 
 export async function deleteUser(userId: string): Promise<void> {

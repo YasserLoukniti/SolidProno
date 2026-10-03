@@ -43,6 +43,7 @@ export async function getData(): Promise<AppData> {
     ...m,
     score: m.score ?? null,
     postponed: m.postponed ?? false,
+    odds: m.odds ?? null,
     date: m.date && /^\d{4}-\d{2}-\d{2}/.test(m.date) ? m.date : null,
   }))
   return data
@@ -92,7 +93,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
   return res.modifiedCount > 0
 }
 
-export type MatchUpdate = Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'score' | 'result'>>
+export type MatchUpdate = Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'odds' | 'score' | 'result'>>
 
 export async function updateMatch(journee: number, update: MatchUpdate): Promise<boolean> {
   const col = await getCollection()

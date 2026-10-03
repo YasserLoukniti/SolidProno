@@ -9,6 +9,7 @@ import { getMatchLogos, parseTeams } from '@/data/teams'
 import { formatScore, isValidScore, scorePrediction } from '@/data/scoring'
 import TeamLogo from '@/components/TeamLogo'
 import HiddenPredictions from '@/components/HiddenPredictions'
+import OddsPills, { formatPoints } from '@/components/OddsPills'
 import { formatMatchDate, isOpenForPredictions, nextMatchIndex } from '@/data/dates'
 
 // Score pronostiqué, mis en valeur selon le résultat (ms absent = match pas encore joué)
@@ -44,9 +45,9 @@ function PlaceholderBox({ hidden }: { hidden?: boolean }) {
 }
 
 function PointsLabel({ ms }: { ms: MatchScore }) {
-  if (ms.exactHit) return <span className="text-[10px] font-bold text-raja-green">Score exact +{ms.points}</span>
-  if (ms.resultHit) return <span className="text-[10px] font-medium text-green-600">Bon résultat +{ms.points}</span>
-  return <span className="text-[10px] font-medium text-red-400">0 pt</span>
+  if (ms.exactHit) return <span className="text-[10px] font-bold text-raja-green">Score exact {formatPoints(ms.points)}</span>
+  if (ms.resultHit) return <span className="text-[10px] font-medium text-green-600">Bon résultat {formatPoints(ms.points)}</span>
+  return <span className="text-[10px] font-medium text-red-400">{formatPoints(ms.points)} pt</span>
 }
 
 function borderFor(ms?: MatchScore) {
@@ -214,6 +215,11 @@ export default function Predictions() {
                 {awayLogo && <TeamLogo logo={awayLogo} name={away} size="w-12 h-12" />}
                 <p className="text-white font-bold text-xs">{away}</p>
               </div>
+            </div>
+
+            {/* Points en jeu (match joué : le résultat final est mis en avant) */}
+            <div className="mt-4 max-w-md mx-auto">
+              <OddsPills match={match} highlight={match.result} variant="dark" />
             </div>
           </div>
 

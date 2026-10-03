@@ -4,33 +4,31 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaFutbol, FaClock, FaChevronLeft, FaChevronRight, FaTrophy } from 'react-icons/fa'
 import { fetchData } from '@/api/client'
-import { calculateLeaderboard } from '@/data/scoring'
-import type { AppData, Match, User, UserScore } from '@/types'
+import { calculateLeaderboard, formatScore, scorePrediction } from '@/data/scoring'
+import type { AppData, Match, Result, User, UserScore } from '@/types'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import TeamLogo from '@/components/TeamLogo'
+import { formatMatchDate, nextMatchIndex } from '@/data/dates'
 
-function ResultTag({ value }: { value: 'V' | 'N' | 'D' }) {
-  const cls = value === 'V'
-    ? 'bg-green-500/30 text-green-300'
-    : value === 'N'
-    ? 'bg-orange-500/30 text-orange-300'
-    : 'bg-red-500/30 text-red-300'
-  return <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${cls}`}>{value}</span>
-}
+const RESULT_LABEL: Record<Result, string> = { V: 'Victoire', N: 'Nul', D: 'Defaite' }
+const RESULT_BG: Record<Result, string> = { V: 'bg-green-600', N: 'bg-orange-500', D: 'bg-red-600' }
 
 function MatchCarousel({ matches, users }: { matches: Match[]; users: User[] }) {
-  // Start at first unplayed match, or last match
-  const firstUnplayed = matches.findIndex(m => m.result === null)
-  const [idx, setIdx] = useState(firstUnplayed >= 0 ? firstUnplayed : matches.length - 1)
+  // Commence au prochain match par date (un match reporté ne passe pas devant)
+  const [idx, setIdx] = useState(() => nextMatchIndex(matches))
 
   const match = matches[idx]
   const { home, away } = parseTeams(match.adversaire)
   const { homeLogo, awayLogo } = getMatchLogos(match.adversaire)
-  const isPlayed = match.result !== null
+  const isPlayed = match.score !== null && match.result !== null
 
+  // Pronostics des participants, tries par points sur ce match s'il est joue
   const userPredictions = users
-    .map(u => ({ name: u.name, pred: u.predictions[String(match.journee)] }))
-    .filter(u => u.pred)
+    .flatMap(u => {
+      const pred = u.predictions[String(match.journee)]
+      return pred ? [{ name: u.name, pred, ms: scorePrediction(pred, match) }] : []
+    })
+    .sort((a, b) => (isPlayed ? b.ms.points - a.ms.points : 0) || a.name.localeCompare(b.name))
 
   return (
     <div className="gradient-hero rounded-2xl overflow-hidden">
@@ -67,7 +65,7 @@ function MatchCarousel({ matches, users }: { matches: Match[]; users: User[] }) 
             key={m.journee}
             onClick={() => setIdx(i)}
             className={`h-1 rounded-full transition-all cursor-pointer ${
-              i === idx ? 'w-4 bg-raja-gold' : m.result ? 'w-1.5 bg-white/30' : 'w-1.5 bg-white/10'
+              i === idx ? 'w-4 bg-raja-gold' : m.score ? 'w-1.5 bg-white/30' : 'w-1.5 bg-white/10'
             }`}
           />
         ))}
@@ -82,22 +80,21 @@ function MatchCarousel({ matches, users }: { matches: Match[]; users: User[] }) 
           </div>
 
           <div className="flex flex-col items-center gap-1.5 min-w-[80px]">
-            {isPlayed ? (
-              <span
-                className={`text-sm font-black px-4 py-1.5 rounded-lg ${
-                  match.result === 'V' ? 'bg-green-600 text-white'
-                  : match.result === 'N' ? 'bg-orange-500 text-white'
-                  : 'bg-red-600 text-white'
-                }`}
-              >
-                {match.result === 'V' ? 'Victoire' : match.result === 'N' ? 'Nul' : 'Defaite'}
-              </span>
+            {match.score && match.result ? (
+              <>
+                <span className="text-4xl font-black text-white tabular-nums leading-none whitespace-nowrap">
+                  {formatScore(match.score)}
+                </span>
+                <span className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full text-white ${RESULT_BG[match.result]}`}>
+                  {RESULT_LABEL[match.result]}
+                </span>
+              </>
             ) : (
               <span className="text-2xl font-black text-white/15">VS</span>
             )}
             <div className="flex items-center gap-1 text-white/30 text-[10px]">
               <FaCalendarAlt className="w-2.5 h-2.5" />
-              <span>{match.date}</span>
+              <span>{formatMatchDate(match.date, match.postponed)}</span>
             </div>
             <div className="flex items-center gap-1 text-white/30 text-[10px]">
               <FaMapMarkerAlt className="w-2.5 h-2.5" />
@@ -111,73 +108,51 @@ function MatchCarousel({ matches, users }: { matches: Match[]; users: User[] }) 
           </div>
         </div>
 
-        {/* Per-user predictions - Realistic prominent, W/B smaller */}
+        {/* Score pronostique par chaque participant */}
         {userPredictions.length > 0 && (
           <div className="mt-5 bg-white/5 rounded-xl border border-white/10 overflow-hidden">
             <div className="divide-y divide-white/5 max-h-[240px] overflow-y-auto">
-              {userPredictions.map(u => {
-                const result = match.result
-                const gotRealistic = result && u.pred.realistic === result
-                const gotWorst = result && u.pred.worst === result
-                const gotBest = result && u.pred.best === result
-                const points = (gotRealistic ? 3 : 0) + (gotWorst ? 1 : 0) + (gotBest ? 1 : 0)
-
-                const rColor = u.pred.realistic === 'V'
-                  ? 'bg-green-500 text-white'
-                  : u.pred.realistic === 'N'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-red-500 text-white'
-
-                return (
-                  <div
-                    key={u.name}
-                    className={`flex items-center gap-3 px-4 py-2.5 ${
-                      result ? (points === 3 ? 'bg-green-500/10' : points === 1 ? 'bg-orange-500/5' : '') : ''
+              {userPredictions.map(({ name, pred, ms }) => (
+                <div
+                  key={name}
+                  className={`flex items-center gap-3 px-4 py-2.5 ${
+                    isPlayed ? (ms.exactHit ? 'bg-raja-gold/15' : ms.resultHit ? 'bg-green-500/10' : '') : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-xs font-medium truncate block ${isPlayed && ms.points === 0 ? 'text-white/40' : 'text-white/80'}`}>
+                      {name}
+                    </span>
+                    {isPlayed && (
+                      <span className={`text-[10px] font-bold ${
+                        ms.exactHit ? 'text-raja-gold' : ms.resultHit ? 'text-green-400' : 'text-white/20'
+                      }`}>
+                        {ms.exactHit ? 'Score exact' : ms.resultHit ? 'Bon resultat' : 'Rate'}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`text-sm font-black tabular-nums whitespace-nowrap px-3 py-1 rounded-lg ${
+                      !isPlayed
+                        ? 'bg-white/10 text-white'
+                        : ms.exactHit
+                        ? 'bg-raja-gold text-raja-dark ring-2 ring-raja-gold/50'
+                        : ms.resultHit
+                        ? 'bg-green-500 text-white'
+                        : 'bg-white/5 text-white/30'
                     }`}
                   >
-                    <div className="flex-1 min-w-0">
-                      <span className="text-white/80 text-xs font-medium truncate block">{u.name}</span>
-                      {result && (
-                        <span className={`text-[10px] font-bold ${
-                          points >= 3 ? 'text-green-400' : points > 0 ? 'text-orange-400' : 'text-white/20'
-                        }`}>
-                          +{points} pt{points > 1 ? 's' : ''}
-                        </span>
-                      )}
-                    </div>
-                    {/* Worst - small */}
-                    <div className={`flex flex-col items-center ${result && !gotWorst ? 'opacity-30' : ''}`}>
-                      <span className="text-[7px] text-white/40 uppercase leading-none mb-0.5">Pire</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                        u.pred.worst === 'V' ? 'bg-green-500/30 text-green-300'
-                        : u.pred.worst === 'N' ? 'bg-orange-500/30 text-orange-300'
-                        : 'bg-red-500/30 text-red-300'
-                      } ${result && gotWorst ? 'ring-2 ring-green-400' : ''}`}>{u.pred.worst}</span>
-                      {result && gotWorst && <span className="text-[9px] text-green-400 font-bold mt-0.5">+1</span>}
-                    </div>
-                    {/* Realistic - BIG */}
-                    <div className="flex flex-col items-center">
-                      <span className="text-[7px] text-raja-gold uppercase leading-none mb-0.5 font-bold">Prono</span>
-                      <span className={`text-sm font-black px-3 py-1 rounded-lg ${rColor} ${
-                        result && gotRealistic ? 'ring-2 ring-green-400' : ''
-                      }`}>
-                        {u.pred.realistic}
-                      </span>
-                      {result && gotRealistic && <span className="text-[9px] text-green-400 font-bold mt-0.5">+3</span>}
-                    </div>
-                    {/* Best - small */}
-                    <div className={`flex flex-col items-center ${result && !gotBest ? 'opacity-30' : ''}`}>
-                      <span className="text-[7px] text-white/40 uppercase leading-none mb-0.5">Best</span>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                        u.pred.best === 'V' ? 'bg-green-500/30 text-green-300'
-                        : u.pred.best === 'N' ? 'bg-orange-500/30 text-orange-300'
-                        : 'bg-red-500/30 text-red-300'
-                      } ${result && gotBest ? 'ring-2 ring-green-400' : ''}`}>{u.pred.best}</span>
-                      {result && gotBest && <span className="text-[9px] text-green-400 font-bold mt-0.5">+1</span>}
-                    </div>
-                  </div>
-                )
-              })}
+                    {formatScore(pred)}
+                  </span>
+                  {isPlayed && (
+                    <span className={`w-8 text-right text-xs font-black ${
+                      ms.exactHit ? 'text-raja-gold' : ms.resultHit ? 'text-green-400' : 'text-white/20'
+                    }`}>
+                      +{ms.points}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -207,9 +182,9 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
           <span className="text-center">#</span>
           <span>Joueur</span>
           <span className="text-center">MJ</span>
-          <span className="text-center text-green-400">R</span>
-          <span className="text-center text-amber-400">W/B</span>
-          <span className="text-center text-red-400">X</span>
+          <span className="text-center text-raja-gold" title="Score exact (+5)">SE</span>
+          <span className="text-center text-green-400" title="Bon resultat (+3)">BR</span>
+          <span className="text-center text-red-400" title="Rate">X</span>
           <span className="text-center">PTS</span>
         </div>
 
@@ -217,8 +192,8 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
         {leaderboard.map((entry, idx) => {
           const rank = idx + 1
           const mj = entry.matchScores.length
-          const rWins = entry.matchScores.filter(ms => ms.realisticHit).length
-          const partialWins = entry.matchScores.filter(ms => !ms.realisticHit && ms.points > 0).length
+          // resultCount inclut les scores exacts : on ne compte ici que les bons resultats "simples"
+          const resultOnly = entry.resultCount - entry.exactCount
           const losses = entry.matchScores.filter(ms => ms.points === 0).length
           const isTop3 = rank <= 3
 
@@ -235,8 +210,8 @@ function LeaderboardCompact({ leaderboard, matchesPlayed }: { leaderboard: UserS
               }`}>{rank}</span>
               <span className="font-semibold text-raja-dark truncate">{entry.userName}</span>
               <span className="text-center text-raja-text-light">{mj}</span>
-              <span className="text-center font-semibold text-green-600">{rWins}</span>
-              <span className="text-center font-semibold text-amber-600">{partialWins}</span>
+              <span className="text-center font-semibold text-amber-600">{entry.exactCount}</span>
+              <span className="text-center font-semibold text-green-600">{resultOnly}</span>
               <span className="text-center font-semibold text-red-500">{losses}</span>
               <span className={`text-center font-black ${isTop3 ? 'text-raja-green' : 'text-raja-dark'}`}>{entry.totalPoints}</span>
             </Link>
@@ -262,7 +237,7 @@ export default function Home() {
     fetchData()
       .then(d => {
         setData(d)
-        setLeaderboard(calculateLeaderboard(d.users, d.matches, d.actualPosition))
+        setLeaderboard(calculateLeaderboard(d.users, d.matches))
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -279,8 +254,8 @@ export default function Home() {
     )
   }
 
-  const matchesPlayed = data?.matches.filter(m => m.result !== null).length ?? 0
-  const totalMatches = data?.matches.length ?? 15
+  const matchesPlayed = data?.matches.filter(m => m.score !== null).length ?? 0
+  const totalMatches = data?.matches.length ?? 30
   const participantCount = data?.users.length ?? 0
 
   return (
@@ -293,7 +268,7 @@ export default function Home() {
           <div className="gradient-hero rounded-2xl px-6 py-12 text-center">
             <img src="/raja-logo.png" alt="Raja CA" className="w-20 h-20 mx-auto mb-4 object-contain" />
             <h1 className="text-white text-2xl font-bold mb-1">SolidProno</h1>
-            <p className="text-white/50 text-sm">Pronostics Botola Pro 2025-26</p>
+            <p className="text-white/50 text-sm">Pronostics Botola Pro 2026-27</p>
           </div>
         )}
       </div>
@@ -327,7 +302,7 @@ export default function Home() {
             >
               <div>
                 <p className="text-white font-bold text-lg">Soumettre mes pronos</p>
-                <p className="text-white/60 text-sm mt-0.5">{totalMatches} matchs restants</p>
+                <p className="text-white/60 text-sm mt-0.5">{totalMatches - matchesPlayed} matchs restants</p>
               </div>
               <FaChevronRight className="w-3.5 h-3.5 text-white/40 group-hover:text-white transition-colors" />
             </Link>

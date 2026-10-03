@@ -4,17 +4,39 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
 import { fetchData } from '@/api/client'
-import type { AppData, Result } from '@/types'
+import type { AppData, MatchScore, Score } from '@/types'
 import { getMatchLogos, parseTeams } from '@/data/teams'
+import { formatScore, isValidScore, scorePrediction } from '@/data/scoring'
 import TeamLogo from '@/components/TeamLogo'
+import { nextMatchIndex } from '@/data/dates'
 
-function Badge({ value, highlight }: { value: Result; highlight?: boolean }) {
-  const cls = {
-    V: highlight ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 border border-green-200',
-    N: highlight ? 'bg-orange-500 text-white' : 'bg-orange-50 text-orange-700 border border-orange-200',
-    D: highlight ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 border border-red-200',
-  }
-  return <span className={`inline-block w-7 text-center py-0.5 rounded text-[10px] font-bold ${cls[value]}`}>{value}</span>
+// Score pronostiqué, mis en valeur selon le résultat (ms absent = match pas encore joué)
+function ScoreBox({ score, ms }: { score: Score; ms?: MatchScore }) {
+  const cls = !ms
+    ? 'bg-raja-gray text-raja-dark border border-raja-gray-2'
+    : ms.exactHit
+      ? 'bg-raja-green text-white'
+      : ms.resultHit
+        ? 'bg-green-50 text-green-700 border border-green-200'
+        : 'bg-red-50 text-red-700 border border-red-200'
+  return (
+    <span className={`inline-block min-w-[52px] text-center px-2 py-1 rounded-lg text-sm font-bold tabular-nums ${cls}`}>
+      {formatScore(score)}
+    </span>
+  )
+}
+
+function PointsLabel({ ms }: { ms: MatchScore }) {
+  if (ms.exactHit) return <span className="text-[10px] font-bold text-raja-green">Score exact +{ms.points}</span>
+  if (ms.resultHit) return <span className="text-[10px] font-medium text-green-600">Bon résultat +{ms.points}</span>
+  return <span className="text-[10px] font-medium text-red-400">0 pt</span>
+}
+
+function borderFor(ms?: MatchScore) {
+  if (!ms) return 'border-raja-gray-2'
+  if (ms.exactHit) return 'border-raja-green'
+  if (ms.resultHit) return 'border-green-200'
+  return 'border-red-100'
 }
 
 export default function Predictions() {
@@ -28,9 +50,8 @@ export default function Predictions() {
     fetchData()
       .then(d => {
         setData(d)
-        // Start at first unplayed match
-        const first = d.matches.findIndex(m => m.result === null)
-        if (first >= 0) setMatchIdx(first)
+        // Commence au prochain match par date
+        setMatchIdx(nextMatchIndex(d.matches))
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -105,7 +126,7 @@ export default function Predictions() {
               </button>
               <div className="text-center">
                 <p className="text-white/40 text-[10px] uppercase tracking-widest">
-                  Journee {match.journee} &middot; {match.lieu}
+                  Journée {match.journee} &middot; {match.lieu}
                 </p>
               </div>
               <button
@@ -124,7 +145,7 @@ export default function Predictions() {
                   key={m.journee}
                   onClick={() => setMatchIdx(i)}
                   className={`h-1 rounded-full transition-all cursor-pointer ${
-                    i === matchIdx ? 'w-4 bg-raja-gold' : m.result ? 'w-1.5 bg-white/30' : 'w-1.5 bg-white/10'
+                    i === matchIdx ? 'w-4 bg-raja-gold' : m.score ? 'w-1.5 bg-white/30' : 'w-1.5 bg-white/10'
                   }`}
                 />
               ))}
@@ -137,14 +158,19 @@ export default function Predictions() {
                 <p className="text-white font-bold text-xs">{home}</p>
               </div>
               <div className="text-center">
-                {match.result ? (
-                  <span className={`text-xs font-bold px-3 py-1 rounded-lg ${
-                    match.result === 'V' ? 'bg-green-600 text-white'
-                    : match.result === 'N' ? 'bg-orange-500 text-white'
-                    : 'bg-red-600 text-white'
-                  }`}>
-                    {match.result === 'V' ? 'Victoire' : match.result === 'N' ? 'Nul' : 'Defaite'}
-                  </span>
+                {match.score ? (
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-2xl font-black text-white tabular-nums">{formatScore(match.score)}</span>
+                    {match.result && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        match.result === 'V' ? 'bg-green-600 text-white'
+                        : match.result === 'N' ? 'bg-orange-500 text-white'
+                        : 'bg-red-600 text-white'
+                      }`}>
+                        {match.result === 'V' ? 'Victoire' : match.result === 'N' ? 'Nul' : 'Défaite'}
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <span className="text-xl font-black text-white/15">VS</span>
                 )}
@@ -160,74 +186,25 @@ export default function Predictions() {
           <div className="space-y-2">
             {data.users.map(u => {
               const pred = u.predictions[String(match.journee)]
-              if (!pred) return null
-              const rHit = match.result && pred.realistic === match.result
-              const wHit = match.result && pred.worst === match.result
-              const bHit = match.result && pred.best === match.result
-              const pts = (rHit ? 3 : 0) + (wHit ? 1 : 0) + (bHit ? 1 : 0)
-              const hasAny = pts > 0
+              if (!isValidScore(pred)) return null
+              const ms = match.score ? scorePrediction(pred, match) : undefined
 
               return (
                 <div
                   key={u.id}
-                  className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 ${
-                    match.result
-                      ? hasAny ? 'border-green-200' : 'border-red-100'
-                      : 'border-raja-gray-2'
-                  }`}
+                  className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 ${borderFor(ms)}`}
                 >
-                  {/* Name */}
+                  {/* Nom */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-raja-dark truncate">{u.name}</p>
-                    {match.result && (
-                      <p className={`text-[10px] font-medium ${
-                        pts >= 3 ? 'text-green-600' : pts > 0 ? 'text-orange-500' : 'text-red-400'
-                      }`}>
-                        +{pts} pt{pts > 1 ? 's' : ''}
-                      </p>
-                    )}
+                    {ms && <PointsLabel ms={ms} />}
                   </div>
 
-                  {/* 3 scenarios */}
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
-                      <p className="text-[9px] text-raja-text-light font-medium mb-0.5">W</p>
-                      <Badge value={pred.worst} highlight={match.result !== null && pred.worst === match.result} />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] text-raja-green font-medium mb-0.5">R</p>
-                      <Badge value={pred.realistic} highlight={match.result !== null && pred.realistic === match.result} />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[9px] text-raja-gold font-medium mb-0.5">B</p>
-                      <Badge value={pred.best} highlight={match.result !== null && pred.best === match.result} />
-                    </div>
-                  </div>
+                  {/* Score pronostiqué */}
+                  <ScoreBox score={pred} ms={ms} />
                 </div>
               )
             })}
-          </div>
-
-          {/* Final position section */}
-          <div className="mt-6 bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
-            <div className="bg-raja-dark px-4 py-2.5">
-              <p className="text-white font-bold text-xs">Classement final predit</p>
-              {data.actualPosition && (
-                <p className="text-white/50 text-[10px]">Position reelle: {data.actualPosition}e</p>
-              )}
-            </div>
-            <div className="divide-y divide-raja-gray-2/50">
-              {data.users.map(u => (
-                <div key={u.id} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-sm font-medium text-raja-dark">{u.name}</span>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-red-400">W: {u.finalPosition.worst}e</span>
-                    <span className="text-raja-green font-bold">R: {u.finalPosition.realistic}e</span>
-                    <span className="text-raja-gold">B: {u.finalPosition.best}e</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       ) : (
@@ -254,49 +231,27 @@ export default function Predictions() {
           <div className="space-y-2">
             {data.matches.map(m => {
               const pred = user.predictions[String(m.journee)]
-              if (!pred) return null
+              if (!isValidScore(pred)) return null
               const { home: mHome, away: mAway } = parseTeams(m.adversaire)
               const logos = getMatchLogos(m.adversaire)
-              const rH = m.result && pred.realistic === m.result
-              const wH = m.result && pred.worst === m.result
-              const bH = m.result && pred.best === m.result
-              const p = (rH ? 3 : 0) + (wH ? 1 : 0) + (bH ? 1 : 0)
+              const ms = m.score ? scorePrediction(pred, m) : undefined
 
               return (
                 <Link
                   key={m.journee}
                   href={`/match/${m.journee}`}
-                  className={`block bg-white rounded-xl border px-4 py-3 hover:shadow-sm transition-all ${
-                    m.result
-                      ? p > 0 ? 'border-green-200' : 'border-red-100'
-                      : 'border-raja-gray-2'
-                  }`}
+                  className={`block bg-white rounded-xl border px-4 py-3 hover:shadow-sm transition-all ${borderFor(ms)}`}
                 >
-                  {/* Match header */}
+                  {/* En-tête du match */}
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[10px] font-bold text-raja-text-light">J{m.journee}</span>
                     <span className={`text-[10px] font-semibold ${
                       m.lieu === 'Domicile' ? 'text-raja-green' : 'text-raja-text-light'
                     }`}>{m.lieu}</span>
-                    {m.result && (
-                      <span className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        m.result === 'V' ? 'bg-green-100 text-green-700'
-                        : m.result === 'N' ? 'bg-orange-100 text-orange-700'
-                        : 'bg-red-100 text-red-700'
-                      }`}>
-                        {m.result === 'V' ? 'Victoire' : m.result === 'N' ? 'Nul' : 'Defaite'}
-                      </span>
-                    )}
-                    {m.result && (
-                      <span className={`text-[10px] font-bold ${
-                        p >= 3 ? 'text-green-600' : p > 0 ? 'text-orange-500' : 'text-red-400'
-                      }`}>
-                        +{p}
-                      </span>
-                    )}
+                    {ms && <span className="ml-auto"><PointsLabel ms={ms} /></span>}
                   </div>
 
-                  {/* Teams + predictions */}
+                  {/* Équipes + prono / score réel */}
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       {logos.homeLogo && <TeamLogo logo={logos.homeLogo} name={mHome} size="w-6 h-6" />}
@@ -307,34 +262,24 @@ export default function Predictions() {
                       {logos.awayLogo && <TeamLogo logo={logos.awayLogo} name={mAway} size="w-6 h-6" />}
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       <div className="text-center">
-                        <p className="text-[8px] text-raja-text-light mb-0.5">W</p>
-                        <Badge value={pred.worst} highlight={m.result !== null && pred.worst === m.result} />
+                        <p className="text-[8px] text-raja-text-light uppercase tracking-wider mb-0.5">Prono</p>
+                        <ScoreBox score={pred} ms={ms} />
                       </div>
-                      <div className="text-center">
-                        <p className="text-[8px] text-raja-green mb-0.5">R</p>
-                        <Badge value={pred.realistic} highlight={m.result !== null && pred.realistic === m.result} />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[8px] text-raja-gold mb-0.5">B</p>
-                        <Badge value={pred.best} highlight={m.result !== null && pred.best === m.result} />
-                      </div>
+                      {m.score && (
+                        <div className="text-center">
+                          <p className="text-[8px] text-raja-text-light uppercase tracking-wider mb-0.5">Réel</p>
+                          <span className="inline-block min-w-[52px] text-center px-2 py-1 rounded-lg text-sm font-bold tabular-nums bg-raja-dark text-white">
+                            {formatScore(m.score)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Link>
               )
             })}
-
-            {/* Final position */}
-            <div className="bg-white rounded-xl border border-raja-gold/30 px-4 py-3 mt-2">
-              <p className="text-xs font-bold text-raja-dark mb-2">Classement final</p>
-              <div className="flex items-center gap-4 text-xs">
-                <span className="text-red-400">Pire: {user.finalPosition.worst}e</span>
-                <span className="text-raja-green font-bold">Realiste: {user.finalPosition.realistic}e</span>
-                <span className="text-raja-gold">Meilleur: {user.finalPosition.best}e</span>
-              </div>
-            </div>
           </div>
         </div>
       )}

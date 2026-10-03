@@ -1,38 +1,72 @@
 import type { Match, Prediction, Result } from '@/types'
-import PredictionSelector from './PredictionSelector'
+import ScoreInput from './ScoreInput'
 import TeamLogo from './TeamLogo'
-import { getMatchLogos, parseTeams } from '@/data/teams'
+import { getMatchLogos, parseTeams, isRaja } from '@/data/teams'
+import { formatMatchDate } from '@/data/dates'
+import { formatScore, scoreToResult } from '@/data/scoring'
 
 interface Props {
   match: Match
+  // undefined = match pas encore touché, pas de score par défaut
   prediction?: Prediction
-  onChange?: (scenario: 'worst' | 'realistic' | 'best', value: Result) => void
+  onChange?: (prediction: Prediction) => void
   readOnly?: boolean
-  resultHighlight?: 'worst' | 'realistic' | 'best' | null
 }
 
-const scenarioConfig = {
-  worst: { label: 'Pire scénario', short: 'W', color: 'text-red-500' },
-  realistic: { label: 'Réaliste', short: 'R', color: 'text-raja-green' },
-  best: { label: 'Meilleur scénario', short: 'B', color: 'text-raja-gold' },
+const resultConfig: Record<Result, { label: string; className: string }> = {
+  V: { label: 'Victoire', className: 'bg-green-100 text-green-700' },
+  N: { label: 'Nul', className: 'bg-orange-100 text-orange-700' },
+  D: { label: 'Défaite', className: 'bg-red-100 text-red-700' },
 }
 
-export default function MatchCard({ match, prediction, onChange, readOnly, resultHighlight }: Props) {
+export default function MatchCard({ match, prediction, onChange, readOnly }: Props) {
   const isDomicile = match.lieu === 'Domicile'
   const { home, away } = parseTeams(match.adversaire)
   const { homeLogo, awayLogo } = getMatchLogos(match.adversaire)
 
+  // Toucher un côté remplit le match : l'autre côté part de 0
+  const setGoals = (side: 'home' | 'away', goals: number) => {
+    onChange?.({ home: 0, away: 0, ...prediction, [side]: goals })
+  }
+
+  const predictedResult = prediction ? scoreToResult(prediction, match.lieu) : null
+
+  const renderTeam = (side: 'home' | 'away', name: string, logo: string | null) => (
+    <div className="flex flex-col items-center gap-2 min-w-0">
+      {logo ? (
+        <TeamLogo logo={logo} name={name} size="w-10 h-10" />
+      ) : (
+        <div className="w-10 h-10 rounded-full bg-raja-gray flex items-center justify-center text-sm font-bold text-raja-text-light">
+          {name.charAt(0)}
+        </div>
+      )}
+      <p
+        className={`text-xs font-semibold text-center leading-tight line-clamp-2 min-h-[2lh] ${
+          isRaja(name) ? 'text-raja-green' : 'text-raja-dark'
+        }`}
+      >
+        {name}
+      </p>
+      <ScoreInput
+        value={prediction ? prediction[side] : null}
+        onChange={goals => setGoals(side, goals)}
+        label={name}
+        disabled={readOnly}
+      />
+    </div>
+  )
+
   return (
     <div
       className={`bg-white rounded-xl border overflow-hidden transition-all ${
-        match.result ? 'border-raja-green/30' : 'border-raja-gray-2'
+        prediction ? 'border-raja-green/30' : 'border-raja-gray-2'
       }`}
     >
       {/* Match header */}
-      <div className={`px-4 py-3 flex items-center justify-between ${
+      <div className={`px-4 py-3 flex items-center justify-between gap-2 ${
         isDomicile ? 'bg-raja-green/5' : 'bg-gray-50'
       }`}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-[10px] font-bold uppercase tracking-wider text-raja-text-light">
             Journée {match.journee}
           </span>
@@ -43,59 +77,37 @@ export default function MatchCard({ match, prediction, onChange, readOnly, resul
             {match.lieu}
           </span>
         </div>
-        {match.result && (
+        {match.result && match.score ? (
           <span
-            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-              match.result === 'V'
-                ? 'bg-green-100 text-green-700'
-                : match.result === 'N'
-                ? 'bg-orange-100 text-orange-700'
-                : 'bg-red-100 text-red-700'
-            }`}
+            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${resultConfig[match.result].className}`}
           >
-            {match.result === 'V' ? 'Victoire' : match.result === 'N' ? 'Nul' : 'Défaite'}
+            {formatScore(match.score)} · {resultConfig[match.result].label}
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-raja-text-light shrink-0 capitalize">
+            {formatMatchDate(match.date, match.postponed)}
           </span>
         )}
       </div>
 
-      {/* Teams with logos */}
-      <div className="px-4 py-3 flex items-center gap-3">
-        {homeLogo && <TeamLogo logo={homeLogo} name={home} size="w-8 h-8" />}
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-raja-dark truncate">{home}</p>
-          <p className="font-semibold text-sm text-raja-dark truncate">{away}</p>
-        </div>
-        {awayLogo && <TeamLogo logo={awayLogo} name={away} size="w-8 h-8" />}
+      {/* Affiche : logo, nom et compteur de buts sous chaque équipe */}
+      <div className="px-3 pt-4 pb-3 grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+        {renderTeam('home', home, homeLogo)}
+        <span className="self-end pb-2 text-raja-gray-dark font-bold">–</span>
+        {renderTeam('away', away, awayLogo)}
       </div>
 
-      {/* Prediction selectors */}
-      <div className="px-4 pb-4 space-y-2">
-        {(['worst', 'realistic', 'best'] as const).map(scenario => {
-          const cfg = scenarioConfig[scenario]
-          const isHighlighted = resultHighlight === scenario
-          return (
-            <div
-              key={scenario}
-              className={`flex items-center justify-between py-1.5 px-3 rounded-lg transition-all ${
-                isHighlighted
-                  ? scenario === 'realistic'
-                    ? 'bg-green-50 ring-1 ring-green-400'
-                    : 'bg-orange-50 ring-1 ring-orange-300'
-                  : 'hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className={`text-xs font-bold ${cfg.color}`}>{cfg.short}</span>
-                <span className="text-xs text-raja-text-light">{cfg.label}</span>
-              </div>
-              <PredictionSelector
-                value={prediction?.[scenario] ?? null}
-                onChange={val => onChange?.(scenario, val)}
-                disabled={readOnly}
-              />
-            </div>
-          )
-        })}
+      {/* Issue prédite pour le Raja */}
+      <div className="px-4 pb-3 flex justify-center">
+        {predictedResult ? (
+          <span
+            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${resultConfig[predictedResult].className}`}
+          >
+            {resultConfig[predictedResult].label} du Raja
+          </span>
+        ) : (
+          <span className="text-[10px] text-raja-text-light">Touche + / − pour pronostiquer</span>
+        )}
       </div>
     </div>
   )

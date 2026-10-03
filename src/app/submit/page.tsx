@@ -4,18 +4,15 @@ import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchData, submitPredictions } from '@/api/client'
 import MatchCard from '@/components/MatchCard'
-import type { Result, Prediction, FinalPosition, Match } from '@/types'
+import type { Prediction, Match } from '@/types'
+import { POINTS_RESULT, POINTS_EXACT } from '@/data/scoring'
+import { isOpenForPredictions } from '@/data/dates'
 import { FaCheckCircle, FaLock } from 'react-icons/fa'
 
 export default function SubmitPredictions() {
   const router = useRouter()
   const [name, setName] = useState('')
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({})
-  const [finalPosition, setFinalPosition] = useState<FinalPosition>({
-    worst: 8,
-    realistic: 4,
-    best: 1,
-  })
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -33,18 +30,12 @@ export default function SubmitPredictions() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Only unplayed matches are available for predictions
-  const availableMatches = allMatches.filter(m => m.result === null)
-  const playedMatches = allMatches.filter(m => m.result !== null)
+  // Pronostics ouverts jusqu'au coup d'envoi
+  const availableMatches = allMatches.filter(m => isOpenForPredictions(m))
+  const playedMatches = allMatches.filter(m => !isOpenForPredictions(m))
 
-  const handlePredictionChange = (journee: number, scenario: 'worst' | 'realistic' | 'best', value: Result) => {
-    setPredictions(prev => ({
-      ...prev,
-      [String(journee)]: {
-        ...prev[String(journee)],
-        [scenario]: value,
-      } as Prediction,
-    }))
+  const handlePredictionChange = (journee: number, prediction: Prediction) => {
+    setPredictions(prev => ({ ...prev, [String(journee)]: prediction }))
     if (highlightJournee === journee) {
       setHighlightJournee(null)
     }
@@ -52,12 +43,9 @@ export default function SubmitPredictions() {
 
   const findFirstIncomplete = (): { type: 'name' } | { type: 'match'; journee: number } | null => {
     if (!name.trim()) return { type: 'name' }
-    for (const match of availableMatches) {
-      const pred = predictions[String(match.journee)]
-      if (!pred || !pred.worst || !pred.realistic || !pred.best) {
-        return { type: 'match', journee: match.journee }
-      }
-    }
+    // Un match n'est rempli que si l'utilisateur l'a touché
+    const missingMatch = availableMatches.find(m => !predictions[String(m.journee)])
+    if (missingMatch) return { type: 'match', journee: missingMatch.journee }
     return null
   }
 
@@ -69,13 +57,8 @@ export default function SubmitPredictions() {
         nameRef.current?.focus()
         nameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       } else {
-        const pred = predictions[String(missing.journee)]
-        const missingFields: string[] = []
-        if (!pred?.worst) missingFields.push('Pire')
-        if (!pred?.realistic) missingFields.push('Realiste')
-        if (!pred?.best) missingFields.push('Meilleur')
         const matchInfo = availableMatches.find(m => m.journee === missing.journee)
-        setError(`J${missing.journee} — ${matchInfo?.adversaire} : il manque ${missingFields.join(', ')}`)
+        setError(`J${missing.journee} — ${matchInfo?.adversaire} : il manque ton score`)
         setHighlightJournee(missing.journee)
         matchRefs.current[missing.journee]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
@@ -90,7 +73,7 @@ export default function SubmitPredictions() {
     setSubmitting(true)
     setError('')
     try {
-      await submitPredictions(name.trim(), predictions, finalPosition)
+      await submitPredictions(name.trim(), predictions)
       // Small delay to let Blob propagate before redirecting
       await new Promise(r => setTimeout(r, 1500))
       router.push('/predictions')
@@ -103,10 +86,7 @@ export default function SubmitPredictions() {
     }
   }
 
-  const completedCount = availableMatches.filter(m => {
-    const pred = predictions[String(m.journee)]
-    return pred?.worst && pred?.realistic && pred?.best
-  }).length
+  const completedCount = availableMatches.filter(m => predictions[String(m.journee)]).length
   const totalRequired = availableMatches.length
   const progress = totalRequired > 0 ? (completedCount / totalRequired) * 100 : 0
 
@@ -124,32 +104,18 @@ export default function SubmitPredictions() {
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-raja-dark">Soumettre mes pronostics</h1>
         <p className="text-raja-text-light text-sm mt-1">
-          Remplis chaque match avec tes 3 scenarios. Definitif une fois valide.
+          Pronostique le score de chaque match. Definitif une fois valide.
         </p>
       </div>
 
       {/* Regles */}
-      <div className="bg-white rounded-xl border border-raja-gray-2 p-4 mb-4">
-        <p className="text-xs text-raja-text-light mb-3">
-          Pour chaque match, donne 3 pronostics (<strong className="text-raja-dark">V</strong>ictoire, <strong className="text-raja-dark">N</strong>ul, <strong className="text-raja-dark">D</strong>efaite). Les points se cumulent :
+      <div className="bg-white rounded-xl border border-raja-gray-2 px-4 py-3 mb-4 text-center">
+        <p className="text-sm text-raja-text-light">
+          Bon résultat : <strong className="text-green-600">+{POINTS_RESULT} pts</strong>
+          <span className="mx-2 text-raja-gray-2">·</span>
+          Score exact : <strong className="text-raja-gold">+{POINTS_EXACT} pts</strong>
         </p>
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-green-50 rounded-lg py-2.5">
-            <p className="text-lg font-black text-green-600">+3</p>
-            <p className="text-[10px] text-green-700 font-medium">Realiste juste</p>
-          </div>
-          <div className="bg-red-50 rounded-lg py-2.5">
-            <p className="text-lg font-black text-red-500">+1</p>
-            <p className="text-[10px] text-red-600 font-medium">Pire juste</p>
-          </div>
-          <div className="bg-amber-50 rounded-lg py-2.5">
-            <p className="text-lg font-black text-amber-600">+1</p>
-            <p className="text-[10px] text-amber-700 font-medium">Meilleur juste</p>
-          </div>
-        </div>
-        <p className="text-[10px] text-raja-text-light mt-2 text-center">
-          3 bons = <strong className="text-raja-dark">5 pts max</strong> par match
-        </p>
+        <p className="text-[10px] text-raja-text-light mt-1">Non cumulable : un score exact rapporte {POINTS_EXACT} pts au total.</p>
       </div>
 
       {/* Played matches warning */}
@@ -157,7 +123,7 @@ export default function SubmitPredictions() {
         <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm mb-4 flex items-center gap-2">
           <FaLock className="w-3.5 h-3.5 shrink-0" />
           <span>
-            {playedMatches.length} match{playedMatches.length > 1 ? 's' : ''} deja joue{playedMatches.length > 1 ? 's' : ''} — tu ne peux pronostiquer que les {availableMatches.length} matchs restants.
+            {playedMatches.length} match{playedMatches.length > 1 ? 's' : ''} déjà commencé{playedMatches.length > 1 ? 's' : ''} ou joué{playedMatches.length > 1 ? 's' : ''} — tu ne peux pronostiquer que les {availableMatches.length} matchs restants.
           </span>
         </div>
       )}
@@ -207,7 +173,7 @@ export default function SubmitPredictions() {
             <MatchCard
               match={match}
               prediction={predictions[String(match.journee)]}
-              onChange={(scenario, value) => handlePredictionChange(match.journee, scenario, value)}
+              onChange={prediction => handlePredictionChange(match.journee, prediction)}
             />
           </div>
         ))}
@@ -221,44 +187,8 @@ export default function SubmitPredictions() {
         </div>
       )}
 
-      {/* Final position */}
       {availableMatches.length > 0 && (
         <>
-          <div className="mt-8 bg-white rounded-xl border border-raja-gray-2 overflow-hidden">
-            <div className="bg-raja-dark px-5 py-3">
-              <h2 className="text-white font-bold text-sm">Classement final predit</h2>
-              <p className="text-white/50 text-xs mt-0.5">Position du Raja au classement Botola Pro (1-16)</p>
-            </div>
-            <div className="p-5 space-y-3">
-              {(['worst', 'realistic', 'best'] as const).map(scenario => {
-                const config = {
-                  worst: { label: 'Pire scenario', color: 'text-red-500', bg: 'bg-red-50' },
-                  realistic: { label: 'Realiste', color: 'text-raja-green', bg: 'bg-green-50' },
-                  best: { label: 'Meilleur scenario', color: 'text-raja-gold', bg: 'bg-amber-50' },
-                }
-                const cfg = config[scenario]
-                return (
-                  <div key={scenario} className={`flex items-center justify-between px-4 py-3 rounded-lg ${cfg.bg}`}>
-                    <span className={`text-sm font-medium ${cfg.color}`}>{cfg.label}</span>
-                    <select
-                      value={finalPosition[scenario]}
-                      onChange={e =>
-                        setFinalPosition(prev => ({ ...prev, [scenario]: Number(e.target.value) }))
-                      }
-                      className="px-3 py-1.5 rounded-lg border border-raja-gray-2 bg-white focus:border-raja-green focus:outline-none text-sm font-bold"
-                    >
-                      {Array.from({ length: 16 }, (_, i) => i + 1).map(pos => (
-                        <option key={pos} value={pos}>
-                          {pos}{pos === 1 ? 'er' : 'e'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
           {/* Error */}
           {error && (
             <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm font-medium">

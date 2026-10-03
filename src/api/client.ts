@@ -1,4 +1,10 @@
-import type { AppData, Prediction, FinalPosition, User } from '@/types'
+import type { AppData, Match, Prediction, User } from '@/types'
+
+export const SESSION_EXPIRED = 'Session admin expirée'
+
+function assertAdminResponse(res: Response) {
+  if (res.status === 401) throw new Error(SESSION_EXPIRED)
+}
 
 export async function fetchData(): Promise<AppData> {
   const res = await fetch('/api/data', { cache: 'no-store' })
@@ -8,13 +14,12 @@ export async function fetchData(): Promise<AppData> {
 
 export async function submitPredictions(
   name: string,
-  predictions: Record<string, Prediction>,
-  finalPosition: FinalPosition
+  predictions: Record<string, Prediction>
 ): Promise<User> {
   const res = await fetch('/api/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, predictions, finalPosition }),
+    body: JSON.stringify({ name, predictions }),
   })
   if (res.status === 409) throw new Error('Ce prenom est deja pris')
   if (!res.ok) throw new Error('Failed to submit')
@@ -31,13 +36,17 @@ export async function adminLogin(password: string): Promise<{ success: boolean; 
   return res.json()
 }
 
-export async function setMatchResult(journee: number, result: 'V' | 'N' | 'D' | null): Promise<void> {
-  const res = await fetch('/api/admin/result', {
+export async function updateMatch(
+  journee: number,
+  update: Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'score'>>
+): Promise<void> {
+  const res = await fetch('/api/admin/match', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ journee, result }),
+    body: JSON.stringify({ journee, ...update }),
   })
-  if (!res.ok) throw new Error('Failed to set result')
+  assertAdminResponse(res)
+  if (!res.ok) throw new Error('Failed to update match')
 }
 
 export async function deleteUser(userId: string): Promise<void> {
@@ -46,20 +55,28 @@ export async function deleteUser(userId: string): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId }),
   })
+  assertAdminResponse(res)
   if (!res.ok) throw new Error('Failed to delete user')
-}
-
-export async function setFinalPosition(position: number | null): Promise<void> {
-  const res = await fetch('/api/admin/final-position', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ position }),
-  })
-  if (!res.ok) throw new Error('Failed to set position')
 }
 
 export async function syncMatches(): Promise<{ matchCount: number }> {
   const res = await fetch('/api/admin/sync-matches', { method: 'POST' })
+  assertAdminResponse(res)
   if (!res.ok) throw new Error('Failed to sync matches')
   return res.json()
+}
+
+export async function resetSeason(password: string): Promise<{ matchCount: number }> {
+  const res = await fetch('/api/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  })
+  if (res.status === 401) throw new Error('Mot de passe incorrect ou session expirée')
+  if (!res.ok) throw new Error('Failed to reset season')
+  return res.json()
+}
+
+export async function adminLogout(): Promise<void> {
+  await fetch('/api/admin/login', { method: 'DELETE' })
 }

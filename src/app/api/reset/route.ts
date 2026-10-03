@@ -3,19 +3,18 @@ import { INITIAL_MATCHES } from '@/data/matches'
 import type { AppData } from '@/types'
 import { MongoClient } from 'mongodb'
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'raja2026'
+import { ADMIN_PASSWORD, isAdmin } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
   const { password } = await req.json() as { password: string }
 
-  if (password !== ADMIN_PASSWORD) {
+  if (!isAdmin(req) || password !== ADMIN_PASSWORD) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const freshData: AppData = {
     matches: INITIAL_MATCHES,
     users: [],
-    actualPosition: null,
   }
 
   const uri = process.env.MONGODB_URI

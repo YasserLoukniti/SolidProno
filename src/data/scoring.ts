@@ -1,60 +1,50 @@
-import type { Match, User, UserScore, MatchScore, Result } from '@/types'
+import type { Lieu, Match, Result, Score, User, UserScore, MatchScore } from '@/types'
 
-export function calculateUserScore(user: User, matches: Match[], actualPosition: number | null): UserScore {
-  const matchScores: MatchScore[] = []
+export const POINTS_RESULT = 3
+export const POINTS_EXACT = 5
 
-  for (const match of matches) {
-    if (!match.result) continue
+export function isValidScore(score: unknown): score is Score {
+  const s = score as Score
+  return !!s && [s.home, s.away].every(g => Number.isInteger(g) && g >= 0 && g <= 20)
+}
 
-    const pred = user.predictions[String(match.journee)]
-    if (!pred) {
-      matchScores.push({ journee: match.journee, points: 0, realisticHit: false, worstHit: false, bestHit: false })
-      continue
-    }
+// Résultat du point de vue du Raja
+export function scoreToResult(score: Score, lieu: Lieu): Result {
+  const raja = lieu === 'Domicile' ? score.home : score.away
+  const adv = lieu === 'Domicile' ? score.away : score.home
+  return raja > adv ? 'V' : raja === adv ? 'N' : 'D'
+}
 
-    const result = match.result as Result
-    const realisticHit = pred.realistic === result
-    const worstHit = pred.worst === result
-    const bestHit = pred.best === result
+export function formatScore(score: Score): string {
+  return `${score.home} - ${score.away}`
+}
 
-    // Cumulative: realistic=3, worst=1, best=1 — all stack
-    let points = 0
-    if (realisticHit) points += 3
-    if (worstHit) points += 1
-    if (bestHit) points += 1
+export function scorePrediction(pred: Score | undefined, match: Match): MatchScore {
+  const miss = { journee: match.journee, points: 0, resultHit: false, exactHit: false }
+  if (!pred || !match.score) return miss
+  const exactHit = pred.home === match.score.home && pred.away === match.score.away
+  const resultHit = scoreToResult(pred, match.lieu) === scoreToResult(match.score, match.lieu)
+  const points = exactHit ? POINTS_EXACT : resultHit ? POINTS_RESULT : 0
+  return { journee: match.journee, points, resultHit, exactHit }
+}
 
-    matchScores.push({ journee: match.journee, points, realisticHit, worstHit, bestHit })
-  }
-
-  let positionPoints = 0
-  if (actualPosition !== null) {
-    const fp = user.finalPosition
-
-    // Cumulative too: realistic + worst + best all count
-    if (fp.realistic === actualPosition) positionPoints += 5
-    else if (Math.abs(fp.realistic - actualPosition) === 1) positionPoints += 3
-    else if (Math.abs(fp.realistic - actualPosition) === 2) positionPoints += 1
-
-    if (fp.worst === actualPosition) positionPoints += 2
-    else if (Math.abs(fp.worst - actualPosition) === 1) positionPoints += 1
-
-    if (fp.best === actualPosition) positionPoints += 2
-    else if (Math.abs(fp.best - actualPosition) === 1) positionPoints += 1
-  }
-
-  const totalPoints = matchScores.reduce((sum, ms) => sum + ms.points, 0) + positionPoints
+export function calculateUserScore(user: User, matches: Match[]): UserScore {
+  const matchScores = matches
+    .filter(m => m.score)
+    .map(m => scorePrediction(user.predictions[String(m.journee)], m))
 
   return {
     userId: user.id,
     userName: user.name,
-    totalPoints,
+    totalPoints: matchScores.reduce((sum, ms) => sum + ms.points, 0),
     matchScores,
-    positionPoints,
+    exactCount: matchScores.filter(ms => ms.exactHit).length,
+    resultCount: matchScores.filter(ms => ms.resultHit).length,
   }
 }
 
-export function calculateLeaderboard(users: User[], matches: Match[], actualPosition: number | null): UserScore[] {
+export function calculateLeaderboard(users: User[], matches: Match[]): UserScore[] {
   return users
-    .map(user => calculateUserScore(user, matches, actualPosition))
-    .sort((a, b) => b.totalPoints - a.totalPoints)
+    .map(user => calculateUserScore(user, matches))
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.exactCount - a.exactCount)
 }

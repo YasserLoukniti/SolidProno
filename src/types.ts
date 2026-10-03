@@ -1,45 +1,45 @@
 export type Result = 'V' | 'N' | 'D'
 
+export type Lieu = 'Domicile' | 'Extérieur'
+
+// Score dans l'ordre de l'affiche "domicile vs extérieur"
+export interface Score {
+  home: number
+  away: number
+}
+
 export interface Match {
   journee: number
   adversaire: string
-  lieu: 'Domicile' | 'Extérieur'
-  date: string
+  lieu: Lieu
+  // "YYYY-MM-DDTHH:mm" en heure marocaine, null si non programmé
+  date: string | null
+  // Match reporté par la Ligue ; garde sa journée, la nouvelle date est saisie dans `date`
+  postponed: boolean
+  score: Score | null
+  // Résultat du Raja, déduit du score à l'enregistrement
   result: Result | null
 }
 
-export interface Prediction {
-  worst: Result
-  realistic: Result
-  best: Result
-}
-
-export interface FinalPosition {
-  worst: number
-  realistic: number
-  best: number
-}
+export type Prediction = Score
 
 export interface User {
   id: string
   name: string
   createdAt: string
   predictions: Record<string, Prediction>
-  finalPosition: FinalPosition
 }
 
 export interface AppData {
   matches: Match[]
   users: User[]
-  actualPosition: number | null
 }
 
 export interface MatchScore {
   journee: number
   points: number
-  realisticHit: boolean
-  worstHit: boolean
-  bestHit: boolean
+  resultHit: boolean
+  exactHit: boolean
 }
 
 export interface UserScore {
@@ -47,5 +47,6 @@ export interface UserScore {
   userName: string
   totalPoints: number
   matchScores: MatchScore[]
-  positionPoints: number
+  exactCount: number
+  resultCount: number
 }

@@ -1,8 +1,8 @@
-import type { AppData, User } from '@/types'
+import type { AppData, Match, User } from '@/types'
 import { INITIAL_MATCHES } from '@/data/matches'
 import { MongoClient } from 'mongodb'
 
-const INITIAL_DATA: AppData = { matches: INITIAL_MATCHES, users: [], actualPosition: null }
+const INITIAL_DATA: AppData = { matches: INITIAL_MATCHES, users: [] }
 
 // MongoDB connection (cached for serverless)
 let client: MongoClient | null = null
@@ -31,8 +31,15 @@ export async function getData(): Promise<AppData> {
     await col.insertOne({ _id: 'main' as unknown as import('mongodb').ObjectId, ...INITIAL_DATA })
     return INITIAL_DATA
   }
-  const { _id, ...data } = doc
-  return data as unknown as AppData
+  const { _id, ...data } = doc as unknown as AppData & { _id: unknown }
+  // Anciens documents : pas de champ `score`, et dates en texte libre ("À programmer")
+  data.matches = data.matches.map(m => ({
+    ...m,
+    score: m.score ?? null,
+    postponed: m.postponed ?? false,
+    date: m.date && /^\d{4}-\d{2}-\d{2}/.test(m.date) ? m.date : null,
+  }))
+  return data
 }
 
 async function saveData(data: AppData) {
@@ -59,17 +66,13 @@ export async function deleteUser(userId: string): Promise<boolean> {
   return true
 }
 
-export async function setMatchResult(journee: number, result: 'V' | 'N' | 'D' | null): Promise<boolean> {
+export type MatchUpdate = Partial<Pick<Match, 'adversaire' | 'lieu' | 'date' | 'postponed' | 'score' | 'result'>>
+
+export async function updateMatch(journee: number, update: MatchUpdate): Promise<boolean> {
   const data = await getData()
   const match = data.matches.find(m => m.journee === journee)
   if (!match) return false
-  match.result = result
+  Object.assign(match, update)
   await saveData(data)
   return true
-}
-
-export async function setActualPosition(position: number | null) {
-  const data = await getData()
-  data.actualPosition = position
-  await saveData(data)
 }

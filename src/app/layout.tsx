@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'SolidProno - Raja Club Athletic',
-  description: 'Pronostics Botola Pro 2025-26',
+  description: 'Pronostics Botola Pro 2026-27',
   icons: { icon: '/favicon.svg' },
 }
 
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img src="/raja-logo.png" alt="Raja CA" className="w-8 h-8 object-contain opacity-50" />
               <span className="text-raja-gray-dark text-xs">SolidProno &mdash; Raja Club Athletic</span>
             </div>
-            <span className="text-raja-gray-dark text-xs">Botola Pro 2025-26</span>
+            <span className="text-raja-gray-dark text-xs">Botola Pro 2026-27</span>
           </div>
         </footer>
       </body>

@@ -8,7 +8,7 @@ const INITIAL_DATA: AppData = { matches: INITIAL_MATCHES, users: [] }
 const MAIN_ID = 'main' as unknown as import('mongodb').ObjectId
 
 // Champs privés d'un participant, jamais renvoyés par /api/data
-export type StoredUser = User & { pinHash: string; token: string }
+export type StoredUser = User & { passwordHash: string; token: string }
 
 // MongoDB connection (cached for serverless)
 let client: MongoClient | null = null

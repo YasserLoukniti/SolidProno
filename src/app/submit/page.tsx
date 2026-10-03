@@ -70,11 +70,11 @@ function Spinner({ className = 'w-8 h-8 border-3 border-raja-green' }: { classNa
 function AuthCard({ onAuthenticated, notice }: { onAuthenticated: (user: User) => void; notice?: string }) {
   const [mode, setMode] = useState<'register' | 'login'>('register')
   const [name, setName] = useState('')
-  const [pin, setPin] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const canSubmit = name.trim().length >= 2 && /^\d{4}$/.test(pin) && !submitting
+  const canSubmit = name.trim().length >= 2 && password.length >= 4 && !submitting
 
   const switchMode = (next: 'register' | 'login') => {
     setMode(next)
@@ -87,7 +87,7 @@ function AuthCard({ onAuthenticated, notice }: { onAuthenticated: (user: User) =
     setSubmitting(true)
     setError('')
     try {
-      const user = await (mode === 'register' ? register : login)(name.trim(), pin)
+      const user = await (mode === 'register' ? register : login)(name.trim(), password)
       onAuthenticated(user)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur')
@@ -137,25 +137,23 @@ function AuthCard({ onAuthenticated, notice }: { onAuthenticated: (user: User) =
           </div>
 
           <div>
-            <label htmlFor="auth-pin" className="block text-xs font-semibold text-raja-dark mb-1.5">
-              Code à 4 chiffres
+            <label htmlFor="auth-password" className="block text-xs font-semibold text-raja-dark mb-1.5">
+              Mot de passe
             </label>
             <input
-              id="auth-pin"
+              id="auth-password"
               type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
               autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-              maxLength={4}
-              value={pin}
-              onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="••••"
-              className="w-full px-3 py-3 rounded-lg border border-raja-gray-2 bg-white focus:border-raja-green focus:outline-none text-base font-bold tracking-[0.5em]"
+              maxLength={100}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder={mode === 'register' ? '4 caractères minimum' : 'Ton mot de passe'}
+              className="w-full px-3 py-3 rounded-lg border border-raja-gray-2 bg-white focus:border-raja-green focus:outline-none text-base font-medium"
             />
             <p className="text-[11px] text-raja-text-light mt-1.5">
               {mode === 'register'
-                ? 'Choisis un code et retiens-le : il te servira à te reconnecter sur un autre téléphone.'
-                : "Le code choisi à l'inscription, pour retrouver tes pronos sur cet appareil."}
+                ? 'Choisis ce que tu veux et retiens-le : il te servira à te reconnecter sur un autre téléphone.'
+                : "Le mot de passe choisi à l'inscription, pour retrouver tes pronos sur cet appareil."}
             </p>
           </div>
 
@@ -383,7 +381,7 @@ export default function MyPredictions() {
       if (message === UNAUTHORIZED) {
         clearUserToken()
         setUser(null)
-        setAuthNotice('Ta session a expiré : reconnecte-toi avec ton prénom et ton code.')
+        setAuthNotice('Ta session a expiré : reconnecte-toi avec ton prénom et ton mot de passe.')
       } else if (message === MATCH_STARTED) {
         setKey(setDrafts, key, undefined)
         setNotice(`J${match.journee} — ${match.adversaire} a déjà commencé : ce prono n'a pas pu être pris en compte.`)

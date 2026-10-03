@@ -29,11 +29,11 @@ export function clearUserToken() {
   } catch {}
 }
 
-async function authenticate(path: string, name: string, pin: string): Promise<User> {
+async function authenticate(path: string, name: string, password: string): Promise<User> {
   const res = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, pin }),
+    body: JSON.stringify({ name, password }),
   })
   const body = await res.json()
   if (!res.ok) throw new Error(body.error ?? 'Erreur')
@@ -43,12 +43,12 @@ async function authenticate(path: string, name: string, pin: string): Promise<Us
   return body.user
 }
 
-export function register(name: string, pin: string): Promise<User> {
-  return authenticate('/api/auth/register', name, pin)
+export function register(name: string, password: string): Promise<User> {
+  return authenticate('/api/auth/register', name, password)
 }
 
-export function login(name: string, pin: string): Promise<User> {
-  return authenticate('/api/auth/login', name, pin)
+export function login(name: string, password: string): Promise<User> {
+  return authenticate('/api/auth/login', name, password)
 }
 
 // null si personne n'est connecté ou si la session n'est plus valide

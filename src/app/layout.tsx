@@ -1,31 +1,29 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Big_Shoulders, Onest } from 'next/font/google'
 import './globals.css'
-import Navigation from '@/components/Navigation'
+import AppShell from '@/components/AppShell'
 
-const inter = Inter({ subsets: ['latin'] })
+const bigShoulders = Big_Shoulders({ subsets: ['latin'], variable: '--font-big-shoulders', weight: 'variable' })
+const onest = Onest({ subsets: ['latin'], variable: '--font-onest', weight: 'variable' })
 
 export const metadata: Metadata = {
-  title: 'SolidProno - Raja Club Athletic',
-  description: 'Pronostics Botola Pro 2026-27',
+  title: 'SolidProno · Raja',
+  description: 'Pronostics des matchs du Raja · Botola Pro 2026-27',
   icons: { icon: '/favicon.svg' },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#00A651',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>
-        <Navigation />
-        <main className="pb-20 md:pb-8">{children}</main>
-        <footer className="hidden md:block bg-raja-dark border-t border-white/10 py-6">
-          <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src="/raja-logo.png" alt="Raja CA" className="w-8 h-8 object-contain opacity-50" />
-              <span className="text-raja-gray-dark text-xs">SolidProno &mdash; Raja Club Athletic</span>
-            </div>
-            <span className="text-raja-gray-dark text-xs">Botola Pro 2026-27</span>
-          </div>
-        </footer>
+    <html lang="fr" className={`${bigShoulders.variable} ${onest.variable}`}>
+      <body>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   )

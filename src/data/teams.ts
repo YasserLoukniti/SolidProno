@@ -80,3 +80,26 @@ export function getOpponent(adversaire: string): string {
 export function buildAdversaire(opponent: string, lieu: Lieu): string {
   return lieu === 'Domicile' ? `${RAJA} vs ${opponent}` : `${opponent} vs ${RAJA}`
 }
+
+// Noms courts pour les écrans étroits
+const SHORT_NAMES: Record<string, string> = {
+  'Raja Club Athletic': 'Raja',
+  'Renaissance Zemamra': 'Zemamra',
+  'MAS Fès': 'MAS',
+  'FUS Rabat': 'FUS',
+  'Hassania Agadir': 'Hassania',
+  'RS Berkane': 'Berkane',
+  'Ittihad Tanger': 'IR Tanger',
+  'WS Témara': 'Témara',
+  'Difaa El Jadida': 'Difaa',
+  'CODM Meknès': 'CODM',
+  'Wydad Casablanca': 'Wydad',
+  'Amal Tiznit': 'Tiznit',
+  'Kawkab Marrakech': 'Kawkab',
+  'UTS Rabat': 'UTS',
+  'Moghreb Tétouan': 'Tétouan',
+}
+
+export function shortName(team: string): string {
+  return SHORT_NAMES[team] ?? team
+}

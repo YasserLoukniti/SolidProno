@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Anciennes couleurs : utilisées par l'admin, qui garde un style clair */
   --color-raja-green: #006233;
   --color-raja-green-light: #00843D;
   --color-raja-green-dark: #004D28;
@@ -17,20 +18,57 @@
   --color-raja-gray-dark: #8B949E;
   --color-raja-text: #1F2937;
   --color-raja-text-light: #6B7280;
+
+  /* Appli, thème clair : le vert Raja vif est la couleur forte, l'or est réservé aux points */
+  --color-pitch: #EEF3F0;      /* fond de l'appli */
+  --color-pitch-2: #FFFFFF;    /* cartes */
+  --color-pitch-3: #E4ECE7;    /* surfaces relevées, champs */
+  --color-chalk: #10201A;      /* texte principal */
+  --color-mist: #5D7268;       /* texte secondaire */
+  --color-raja: #00A651;       /* vert Raja : en-tête, actions, sélection */
+  --color-raja-deep: #008A43;  /* vert Raja foncé : texte vert sur blanc, survols */
+  --color-eagle: #B8860B;      /* or : points */
+  --color-brick: #D23B2A;      /* défaite, erreurs */
+  --color-line: rgb(16 32 26 / 0.10);
+
+  --font-display: var(--font-big-shoulders), 'Arial Narrow', sans-serif;
+  --font-sans: var(--font-onest), system-ui, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #F6F8FA;
-  color: #1F2937;
+  font-family: var(--font-sans);
+  background-color: var(--color-pitch);
+  color: var(--color-chalk);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #006233; border-radius: 3px; }
+/* Admin : fond clair d'origine */
+.admin-surface {
+  background-color: #F6F8FA;
+  color: #1F2937;
+}
+
 html { scroll-behavior: smooth; }
+
+:focus-visible {
+  outline: 2px solid var(--color-eagle);
+  outline-offset: 2px;
+}
+
+/* Chiffres de tableau d'affichage */
+.scoreboard {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
+}
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 
 .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
@@ -38,7 +76,18 @@ html { scroll-behavior: smooth; }
 .gradient-hero { background: linear-gradient(135deg, #006233 0%, #004D28 50%, #0D1117 100%); }
 
 @keyframes highlight-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(226, 85, 63, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(226, 85, 63, 0); }
 }
 .animate-highlight { animation: highlight-pulse 0.6s ease-in-out 3; }
+
+/* Validation d'un prono : le chiffre "tombe" comme sur un tableau d'affichage */
+@keyframes flip-in {
+  from { transform: translateY(-35%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.animate-flip { animation: flip-in 0.18s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

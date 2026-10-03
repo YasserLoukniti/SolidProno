@@ -2,25 +2,25 @@ import type { Match } from '@/types'
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
 
-// Les dates sont saisies en heure marocaine (fuseau officiel, changements d'heure du ramadan inclus)
-const MOROCCO_TZ = 'Africa/Casablanca'
+// Les dates sont saisies en heure marocaine : UTC+1, sauf pendant le ramadan (UTC+0).
+// Fenêtres UTC+0 tirées de tzdata 2025b (Africa/Casablanca), codées en dur car certains
+// navigateurs ont une base de fuseaux erronée pour le Maroc. À compléter après 2030.
+const RAMADAN_UTC0 = [
+  ['2026-02-15T02:00:00Z', '2026-03-22T02:00:00Z'],
+  ['2027-02-07T02:00:00Z', '2027-03-14T02:00:00Z'],
+  ['2028-01-23T02:00:00Z', '2028-03-05T02:00:00Z'],
+  ['2029-01-14T02:00:00Z', '2029-02-18T02:00:00Z'],
+  ['2029-12-30T02:00:00Z', '2030-02-10T02:00:00Z'],
+].map(([from, to]) => [Date.parse(from), Date.parse(to)])
+
+function moroccoOffsetMinutes(utcMs: number): number {
+  return RAMADAN_UTC0.some(([from, to]) => utcMs >= from && utcMs < to) ? 0 : 60
+}
 
 export function parseMatchDate(date: string | null): { day: string; time: string } {
   const m = date ? ISO_DATE.exec(date) : null
   if (!m) return { day: '', time: '' }
   return { day: `${m[1]}-${m[2]}-${m[3]}`, time: m[4] ? `${m[4]}:${m[5]}` : '' }
-}
-
-// Décalage (en minutes) du fuseau par rapport à UTC à un instant donné
-function tzOffsetMinutes(utcMs: number, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hourCycle: 'h23',
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit',
-  }).formatToParts(new Date(utcMs))
-  const get = (type: string) => Number(parts.find(p => p.type === type)!.value)
-  const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour'), get('minute'), get('second'))
-  return Math.round((asUtc - utcMs) / 60000)
 }
 
 // Instant absolu du coup d'envoi ; indépendant du fuseau du serveur et du visiteur
@@ -29,8 +29,8 @@ export function kickoffTime(date: string | null): number | null {
   if (!m) return null
   const wall = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4] ?? 0), Number(m[5] ?? 0))
   // Deux passes pour tomber juste le jour d'un changement d'heure
-  const guess = wall - tzOffsetMinutes(wall, MOROCCO_TZ) * 60000
-  return wall - tzOffsetMinutes(guess, MOROCCO_TZ) * 60000
+  const guess = wall - moroccoOffsetMinutes(wall) * 60000
+  return wall - moroccoOffsetMinutes(guess) * 60000
 }
 
 const dayLabel = (instant: Date, timeZone: string) =>
@@ -56,7 +56,7 @@ export function formatMatchDate(date: string | null, postponed = false, local = 
       full = `${dayLabel(kickoff, viewerZone)} · ${viewerTime}`
       if (viewerTime !== moroccoTime) full += ` (${moroccoTime} au Maroc)`
     } else {
-      full = `${dayLabel(kickoff, MOROCCO_TZ)} · ${moroccoTime}`
+      full = `${dayLabel(new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))), 'UTC')} · ${moroccoTime}`
     }
   }
   return postponed ? `Reporté · ${full}` : full

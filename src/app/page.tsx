@@ -9,6 +9,7 @@ import type { AppData, Match, Result, User, UserScore } from '@/types'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import TeamLogo from '@/components/TeamLogo'
 import HiddenPredictions from '@/components/HiddenPredictions'
+import KickoffCountdown from '@/components/KickoffCountdown'
 import OddsPills, { formatPoints } from '@/components/OddsPills'
 import { formatMatchDate, isOpenForPredictions, nextMatchIndex } from '@/data/dates'
 
@@ -111,8 +112,9 @@ function MatchCarousel({ matches, users, me }: { matches: Match[]; users: User[]
             )}
             <div className={`flex items-center gap-1 text-[10px] text-center ${isPostponed ? 'text-raja-orange font-semibold' : 'text-white/30'}`}>
               <FaCalendarAlt className="w-2.5 h-2.5 shrink-0" />
-              <span>{formatMatchDate(match.date, match.postponed)}</span>
+              <span>{formatMatchDate(match.date, match.postponed, true)}</span>
             </div>
+            {!match.result && <KickoffCountdown date={match.date} className="text-[10px] font-semibold text-raja-gold" />}
             <div className="flex items-center gap-1 text-white/30 text-[10px]">
               <FaMapMarkerAlt className="w-2.5 h-2.5" />
               <span>{match.lieu}</span>

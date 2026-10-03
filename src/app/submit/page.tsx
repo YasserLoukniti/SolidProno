@@ -284,7 +284,7 @@ function ClosedMatchRow({ match, prediction }: { match: Match; prediction?: Pred
     <li className="px-4 py-3">
       <div className="flex items-center justify-between gap-2 mb-1.5">
         <span className="text-[10px] font-bold uppercase tracking-wider text-raja-text-light">
-          J{match.journee} · <span className="normal-case font-medium">{formatMatchDate(match.date, match.postponed)}</span>
+          J{match.journee} · <span className="normal-case font-medium">{formatMatchDate(match.date, match.postponed, true)}</span>
         </span>
         {pointsBadge}
       </div>

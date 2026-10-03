@@ -3,6 +3,7 @@ import type { Match, Prediction, Result } from '@/types'
 import ScoreInput from './ScoreInput'
 import TeamLogo from './TeamLogo'
 import OddsPills from './OddsPills'
+import KickoffCountdown from './KickoffCountdown'
 import { getMatchLogos, parseTeams, isRaja } from '@/data/teams'
 import { formatMatchDate } from '@/data/dates'
 import { EXACT_BONUS, formatScore, resultPoints, scoreToResult } from '@/data/scoring'
@@ -96,14 +97,19 @@ export default function MatchCard({ match, prediction, onChange, readOnly, statu
           </span>
         ) : match.postponed ? (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
-            {formatMatchDate(match.date, match.postponed)}
+            {formatMatchDate(match.date, match.postponed, true)}
           </span>
         ) : (
-          <span className="text-[10px] font-medium text-raja-text-light shrink-0 capitalize">
-            {formatMatchDate(match.date, match.postponed)}
+          <span className="text-[10px] font-medium text-raja-text-light shrink-0 text-right">
+            {formatMatchDate(match.date, match.postponed, true)}
           </span>
         )}
       </div>
+      {!match.result && (
+        <div className="px-3 pt-2 text-right">
+          <KickoffCountdown date={match.date} className="text-[10px] font-semibold text-raja-orange" />
+        </div>
+      )}
 
       {/* Affiche : logo, nom et compteur de buts sous chaque équipe */}
       <div className="px-3 pt-4 pb-3 grid grid-cols-[1fr_auto_1fr] items-start gap-2">

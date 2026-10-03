@@ -155,7 +155,7 @@ export default function Predictions() {
                   Journée {match.journee} &middot; {match.lieu}
                 </p>
                 <p className={`text-[11px] mt-0.5 ${matchPostponed ? 'text-raja-orange font-semibold' : 'text-white/60'}`}>
-                  {formatMatchDate(match.date, match.postponed)}
+                  {formatMatchDate(match.date, match.postponed, true)}
                 </p>
               </div>
               <button
@@ -302,7 +302,7 @@ export default function Predictions() {
                       m.lieu === 'Domicile' ? 'text-raja-green' : 'text-raja-text-light'
                     }`}>{m.lieu}</span>
                     <span className={`text-[10px] truncate ${postponed ? 'text-raja-orange font-semibold' : 'text-raja-text-light'}`}>
-                      {formatMatchDate(m.date, m.postponed)}
+                      {formatMatchDate(m.date, m.postponed, true)}
                     </span>
                     {ms && <span className="ml-auto shrink-0"><PointsLabel ms={ms} /></span>}
                   </div>

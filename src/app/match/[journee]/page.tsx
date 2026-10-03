@@ -111,7 +111,7 @@ export default function MatchDetail() {
               </span>
             )}
             <span className={`text-xs text-center ${isPostponed ? 'text-raja-orange font-semibold' : 'text-white/40'}`}>
-              {formatMatchDate(match.date, match.postponed)}
+              {formatMatchDate(match.date, match.postponed, true)}
             </span>
             {!isPlayed && !isOpen && (
               <span className="text-raja-gold text-[10px] font-semibold uppercase tracking-widest">En cours</span>

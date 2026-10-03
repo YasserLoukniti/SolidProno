@@ -2,19 +2,16 @@ import type { Match } from '@/types'
 
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/
 
-// Les dates sont saisies en heure marocaine : UTC+1, sauf pendant le ramadan (UTC+0).
-// Fenêtres UTC+0 tirées de tzdata 2025b (Africa/Casablanca), codées en dur car certains
-// navigateurs ont une base de fuseaux erronée pour le Maroc. À compléter après 2030.
-const RAMADAN_UTC0 = [
-  ['2026-02-15T02:00:00Z', '2026-03-22T02:00:00Z'],
-  ['2027-02-07T02:00:00Z', '2027-03-14T02:00:00Z'],
-  ['2028-01-23T02:00:00Z', '2028-03-05T02:00:00Z'],
-  ['2029-01-14T02:00:00Z', '2029-02-18T02:00:00Z'],
-  ['2029-12-30T02:00:00Z', '2030-02-10T02:00:00Z'],
-].map(([from, to]) => [Date.parse(from), Date.parse(to)])
+// Les dates sont saisies en heure marocaine. Le Maroc est revenu définitivement à GMT (UTC+0)
+// le 20 septembre 2026 à 2h (décret n° 2.26.530), sans changement d'heure au ramadan.
+// Avant : UTC+1, sauf pendant le ramadan 2026. Codé en dur car les bases de fuseaux du serveur
+// et de certains navigateurs ne connaissent pas encore ce décret.
+const GMT_SINCE = Date.parse('2026-09-20T01:00:00Z')
+const RAMADAN_2026_UTC0 = [Date.parse('2026-02-15T02:00:00Z'), Date.parse('2026-03-22T02:00:00Z')]
 
 function moroccoOffsetMinutes(utcMs: number): number {
-  return RAMADAN_UTC0.some(([from, to]) => utcMs >= from && utcMs < to) ? 0 : 60
+  if (utcMs >= GMT_SINCE) return 0
+  return utcMs >= RAMADAN_2026_UTC0[0] && utcMs < RAMADAN_2026_UTC0[1] ? 0 : 60
 }
 
 export function parseMatchDate(date: string | null): { day: string; time: string } {

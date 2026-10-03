@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Match, Prediction, Result } from '@/types'
 import ScoreInput from './ScoreInput'
 import TeamLogo from './TeamLogo'
@@ -5,21 +6,33 @@ import { getMatchLogos, parseTeams, isRaja } from '@/data/teams'
 import { formatMatchDate } from '@/data/dates'
 import { formatScore, scoreToResult } from '@/data/scoring'
 
+// empty : pas de prono enregistré ni saisi · saved : saisie identique au prono enregistré · dirty : saisie non enregistrée
+export type MatchCardStatus = 'empty' | 'saved' | 'dirty'
+
 interface Props {
   match: Match
   // undefined = match pas encore touché, pas de score par défaut
   prediction?: Prediction
   onChange?: (prediction: Prediction) => void
   readOnly?: boolean
+  status?: MatchCardStatus
+  // Pied de carte (bouton d'enregistrement, messages…)
+  children?: ReactNode
 }
 
-const resultConfig: Record<Result, { label: string; className: string }> = {
+export const resultConfig: Record<Result, { label: string; className: string }> = {
   V: { label: 'Victoire', className: 'bg-green-100 text-green-700' },
   N: { label: 'Nul', className: 'bg-orange-100 text-orange-700' },
   D: { label: 'Défaite', className: 'bg-red-100 text-red-700' },
 }
 
-export default function MatchCard({ match, prediction, onChange, readOnly }: Props) {
+const borderByStatus: Record<MatchCardStatus, string> = {
+  empty: 'border-raja-gray-2',
+  saved: 'border-raja-green/40',
+  dirty: 'border-raja-gold ring-1 ring-raja-gold/40',
+}
+
+export default function MatchCard({ match, prediction, onChange, readOnly, status, children }: Props) {
   const isDomicile = match.lieu === 'Domicile'
   const { home, away } = parseTeams(match.adversaire)
   const { homeLogo, awayLogo } = getMatchLogos(match.adversaire)
@@ -30,6 +43,7 @@ export default function MatchCard({ match, prediction, onChange, readOnly }: Pro
   }
 
   const predictedResult = prediction ? scoreToResult(prediction, match.lieu) : null
+  const border = borderByStatus[status ?? (prediction ? 'saved' : 'empty')]
 
   const renderTeam = (side: 'home' | 'away', name: string, logo: string | null) => (
     <div className="flex flex-col items-center gap-2 min-w-0">
@@ -57,18 +71,14 @@ export default function MatchCard({ match, prediction, onChange, readOnly }: Pro
   )
 
   return (
-    <div
-      className={`bg-white rounded-xl border overflow-hidden transition-all ${
-        prediction ? 'border-raja-green/30' : 'border-raja-gray-2'
-      }`}
-    >
-      {/* Match header */}
+    <div className={`bg-white rounded-xl border overflow-hidden transition-all ${border}`}>
+      {/* En-tête du match */}
       <div className={`px-4 py-3 flex items-center justify-between gap-2 ${
         isDomicile ? 'bg-raja-green/5' : 'bg-gray-50'
       }`}>
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[10px] font-bold uppercase tracking-wider text-raja-text-light">
-            Journée {match.journee}
+            J{match.journee}
           </span>
           <span className="text-raja-gray-2">|</span>
           <span className={`text-[10px] font-semibold uppercase tracking-wider ${
@@ -82,6 +92,10 @@ export default function MatchCard({ match, prediction, onChange, readOnly }: Pro
             className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0 ${resultConfig[match.result].className}`}
           >
             {formatScore(match.score)} · {resultConfig[match.result].label}
+          </span>
+        ) : match.postponed ? (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 shrink-0">
+            {formatMatchDate(match.date, match.postponed)}
           </span>
         ) : (
           <span className="text-[10px] font-medium text-raja-text-light shrink-0 capitalize">
@@ -106,9 +120,13 @@ export default function MatchCard({ match, prediction, onChange, readOnly }: Pro
             {resultConfig[predictedResult].label} du Raja
           </span>
         ) : (
-          <span className="text-[10px] text-raja-text-light">Touche + / − pour pronostiquer</span>
+          <span className="text-[10px] text-raja-text-light">
+            {readOnly ? 'Pas de prono' : 'Touche + / − pour pronostiquer'}
+          </span>
         )}
       </div>
+
+      {children && <div className="border-t border-raja-gray-2 px-4 py-3">{children}</div>}
     </div>
   )
 }

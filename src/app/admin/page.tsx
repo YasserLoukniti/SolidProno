@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { fetchData, adminLogin, adminLogout, updateMatch, deleteUser, syncMatches, resetSeason, SESSION_EXPIRED } from '@/api/client'
+import { fetchAdminData, adminLogin, adminLogout, updateMatch, deleteUser, syncMatches, resetSeason, SESSION_EXPIRED } from '@/api/client'
 import type { AppData, Match, Result, Score } from '@/types'
 import { OPPONENTS, RAJA, getOpponent, getTeamLogo } from '@/data/teams'
 import AdminMatchRow, { TeamBadge, type MatchEdit } from '@/components/AdminMatchRow'
@@ -47,7 +47,10 @@ export default function Admin() {
   }, [authenticated])
 
   const loadData = () => {
-    fetchData().then(setData).catch(console.error).finally(() => setLoading(false))
+    fetchAdminData()
+      .then(setData)
+      .catch(e => fail(e, 'Impossible de charger les données'))
+      .finally(() => setLoading(false))
   }
 
   const flash = (text: string, error = false) => {

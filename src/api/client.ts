@@ -12,18 +12,68 @@ export async function fetchData(): Promise<AppData> {
   return res.json()
 }
 
-export async function submitPredictions(
-  name: string,
-  predictions: Record<string, Prediction>
-): Promise<User> {
-  const res = await fetch('/api/submit', {
+// Session participant : jeton gardé dans le navigateur après inscription ou connexion
+const TOKEN_KEY = 'solidprono_token'
+
+export function getUserToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function clearUserToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY)
+  } catch {}
+}
+
+async function authenticate(path: string, name: string, pin: string): Promise<User> {
+  const res = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, predictions }),
+    body: JSON.stringify({ name, pin }),
   })
-  if (res.status === 409) throw new Error('Ce prenom est deja pris')
-  if (!res.ok) throw new Error('Failed to submit')
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? 'Erreur')
+  try {
+    localStorage.setItem(TOKEN_KEY, body.token)
+  } catch {}
+  return body.user
+}
+
+export function register(name: string, pin: string): Promise<User> {
+  return authenticate('/api/auth/register', name, pin)
+}
+
+export function login(name: string, pin: string): Promise<User> {
+  return authenticate('/api/auth/login', name, pin)
+}
+
+// null si personne n'est connecté ou si la session n'est plus valide
+export async function fetchMe(): Promise<User | null> {
+  const token = getUserToken()
+  if (!token) return null
+  const res = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
+  if (res.status === 401) {
+    clearUserToken()
+    return null
+  }
+  if (!res.ok) throw new Error('Failed to fetch user')
   return res.json()
+}
+
+export async function savePrediction(journee: number, score: Prediction | null): Promise<void> {
+  const res = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getUserToken()}` },
+    body: JSON.stringify({ journee, score }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? "Erreur lors de l'enregistrement")
+  }
 }
 
 export async function adminLogin(password: string): Promise<{ success: boolean; token: string }> {
@@ -79,4 +129,11 @@ export async function resetSeason(password: string): Promise<{ matchCount: numbe
 
 export async function adminLogout(): Promise<void> {
   await fetch('/api/admin/login', { method: 'DELETE' })
+}
+
+export async function fetchAdminData(): Promise<AppData> {
+  const res = await fetch('/api/admin/data', { cache: 'no-store' })
+  assertAdminResponse(res)
+  if (!res.ok) throw new Error('Failed to fetch admin data')
+  return res.json()
 }

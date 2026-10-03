@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   const client = new MongoClient(uri)
   await client.connect()
-  const col = client.db('solidprono').collection('appdata')
+  const col = client.db(process.env.MONGODB_DB || 'solidprono').collection('appdata')
 
   const doc = await col.findOne({ _id: 'main' as unknown as import('mongodb').ObjectId })
   const existingByJournee = new Map<number, Match>()

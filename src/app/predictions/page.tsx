@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'
-import { fetchData } from '@/api/client'
-import type { AppData, MatchScore, Score } from '@/types'
+import { FaChevronLeft, FaChevronRight, FaLock } from 'react-icons/fa'
+import { fetchData, fetchMe } from '@/api/client'
+import type { AppData, MatchScore, Score, User } from '@/types'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import { formatScore, isValidScore, scorePrediction } from '@/data/scoring'
 import TeamLogo from '@/components/TeamLogo'
-import { nextMatchIndex } from '@/data/dates'
+import HiddenPredictions from '@/components/HiddenPredictions'
+import { formatMatchDate, isOpenForPredictions, nextMatchIndex } from '@/data/dates'
 
 // Score pronostiqué, mis en valeur selon le résultat (ms absent = match pas encore joué)
 function ScoreBox({ score, ms }: { score: Score; ms?: MatchScore }) {
@@ -22,6 +23,22 @@ function ScoreBox({ score, ms }: { score: Score; ms?: MatchScore }) {
   return (
     <span className={`inline-block min-w-[52px] text-center px-2 py-1 rounded-lg text-sm font-bold tabular-nums ${cls}`}>
       {formatScore(score)}
+    </span>
+  )
+}
+
+// Case discrète à la place d'un prono : caché (match ouvert) ou absent (match fermé)
+function PlaceholderBox({ hidden }: { hidden?: boolean }) {
+  return (
+    <span className="inline-flex items-center justify-center gap-1 min-w-[52px] px-2 py-1 rounded-lg text-[11px] font-medium text-raja-text-light border border-dashed border-raja-gray-2">
+      {hidden ? (
+        <>
+          <FaLock className="w-2.5 h-2.5" />
+          Caché
+        </>
+      ) : (
+        <span className="italic whitespace-nowrap">Pas de prono</span>
+      )}
     </span>
   )
 }
@@ -41,10 +58,12 @@ function borderFor(ms?: MatchScore) {
 
 export default function Predictions() {
   const [data, setData] = useState<AppData | null>(null)
+  const [me, setMe] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [matchIdx, setMatchIdx] = useState(0)
   const [viewMode, setViewMode] = useState<'match' | 'user'>('match')
-  const [selectedUser, setSelectedUser] = useState(0)
+  // null = pas encore choisi : on montre le participant connecté, sinon le premier
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -55,6 +74,8 @@ export default function Predictions() {
       })
       .catch(console.error)
       .finally(() => setLoading(false))
+    // En parallèle et sans bloquer l'affichage : le participant connecté voit ses propres pronos
+    fetchMe().then(setMe).catch(console.error)
   }, [])
 
   if (loading) {
@@ -65,10 +86,10 @@ export default function Predictions() {
     )
   }
 
-  if (!data || data.users.length === 0) {
+  if (!data || data.users.length === 0 || data.matches.length === 0) {
     return (
       <div className="text-center py-20 max-w-6xl mx-auto px-4">
-        <p className="text-raja-text-light text-lg mb-4">Aucun pronostic soumis pour l'instant.</p>
+        <p className="text-raja-text-light text-lg mb-4">Aucun participant pour l&apos;instant.</p>
         <Link href="/submit" className="text-raja-green font-semibold hover:underline">
           Sois le premier !
         </Link>
@@ -79,7 +100,11 @@ export default function Predictions() {
   const match = data.matches[matchIdx]
   const { home, away } = parseTeams(match.adversaire)
   const { homeLogo, awayLogo } = getMatchLogos(match.adversaire)
-  const user = data.users[selectedUser]
+  const matchOpen = isOpenForPredictions(match)
+  const matchPostponed = match.postponed && !match.score
+  const user =
+    data.users.find(u => u.id === (selectedUserId ?? me?.id)) ?? data.users[0]
+  const isMe = !!me && me.id === user.id
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-6">
@@ -128,6 +153,9 @@ export default function Predictions() {
                 <p className="text-white/40 text-[10px] uppercase tracking-widest">
                   Journée {match.journee} &middot; {match.lieu}
                 </p>
+                <p className={`text-[11px] mt-0.5 ${matchPostponed ? 'text-raja-orange font-semibold' : 'text-white/60'}`}>
+                  {formatMatchDate(match.date, match.postponed)}
+                </p>
               </div>
               <button
                 onClick={() => setMatchIdx(i => Math.min(data.matches.length - 1, i + 1))}
@@ -172,7 +200,14 @@ export default function Predictions() {
                     )}
                   </div>
                 ) : (
-                  <span className="text-xl font-black text-white/15">VS</span>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xl font-black text-white/15">VS</span>
+                    {matchPostponed && (
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-raja-orange text-raja-dark">
+                        Reporté
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex-1 text-center">
@@ -182,47 +217,54 @@ export default function Predictions() {
             </div>
           </div>
 
-          {/* All users' predictions for this match */}
-          <div className="space-y-2">
-            {data.users.map(u => {
-              const pred = u.predictions[String(match.journee)]
-              if (!isValidScore(pred)) return null
-              const ms = match.score ? scorePrediction(pred, match) : undefined
+          {/* Pronos de tous les participants : cachés tant que le match est ouvert */}
+          {matchOpen ? (
+            <HiddenPredictions journee={match.journee} me={me} />
+          ) : (
+            <div className="space-y-2">
+              {data.users.map(u => {
+                const raw = u.predictions[String(match.journee)]
+                const pred = isValidScore(raw) ? raw : undefined
+                const ms = match.score ? scorePrediction(pred, match) : undefined
 
-              return (
-                <div
-                  key={u.id}
-                  className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 ${borderFor(ms)}`}
-                >
-                  {/* Nom */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-raja-dark truncate">{u.name}</p>
-                    {ms && <PointsLabel ms={ms} />}
+                return (
+                  <div
+                    key={u.id}
+                    className={`bg-white rounded-xl border px-4 py-3 flex items-center gap-4 ${borderFor(ms)} ${
+                      pred ? '' : 'opacity-70'
+                    }`}
+                  >
+                    {/* Nom */}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-raja-dark truncate">{u.name}</p>
+                      {ms && <PointsLabel ms={ms} />}
+                    </div>
+
+                    {/* Score pronostiqué */}
+                    {pred ? <ScoreBox score={pred} ms={ms} /> : <PlaceholderBox />}
                   </div>
-
-                  {/* Score pronostiqué */}
-                  <ScoreBox score={pred} ms={ms} />
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       ) : (
         /* ===== VIEW: PAR JOUEUR ===== */
         <div>
           {/* User selector */}
           <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-4 px-4">
-            {data.users.map((u, i) => (
+            {data.users.map(u => (
               <button
                 key={u.id}
-                onClick={() => setSelectedUser(i)}
+                onClick={() => setSelectedUserId(u.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                  i === selectedUser
+                  u.id === user.id
                     ? 'bg-raja-green text-white'
                     : 'bg-white text-raja-text-light border border-raja-gray-2 hover:border-raja-green'
                 }`}
               >
                 {u.name}
+                {me?.id === u.id && <span className="ml-1 text-[10px] opacity-70">(toi)</span>}
               </button>
             ))}
           </div>
@@ -230,11 +272,16 @@ export default function Predictions() {
           {/* User's predictions for all matches */}
           <div className="space-y-2">
             {data.matches.map(m => {
-              const pred = user.predictions[String(m.journee)]
-              if (!isValidScore(pred)) return null
+              const open = isOpenForPredictions(m)
+              // Match ouvert : prono caché aux autres, mais visible pour soi via fetchMe()
+              const source = open && isMe ? me : user
+              const raw = source?.predictions[String(m.journee)]
+              const pred = isValidScore(raw) ? raw : undefined
+              const hidden = open && !isMe
               const { home: mHome, away: mAway } = parseTeams(m.adversaire)
               const logos = getMatchLogos(m.adversaire)
               const ms = m.score ? scorePrediction(pred, m) : undefined
+              const postponed = m.postponed && !m.score
 
               return (
                 <Link
@@ -243,12 +290,15 @@ export default function Predictions() {
                   className={`block bg-white rounded-xl border px-4 py-3 hover:shadow-sm transition-all ${borderFor(ms)}`}
                 >
                   {/* En-tête du match */}
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-bold text-raja-text-light">J{m.journee}</span>
-                    <span className={`text-[10px] font-semibold ${
+                  <div className="flex items-center gap-2 mb-2 min-w-0">
+                    <span className="text-[10px] font-bold text-raja-text-light shrink-0">J{m.journee}</span>
+                    <span className={`text-[10px] font-semibold shrink-0 ${
                       m.lieu === 'Domicile' ? 'text-raja-green' : 'text-raja-text-light'
                     }`}>{m.lieu}</span>
-                    {ms && <span className="ml-auto"><PointsLabel ms={ms} /></span>}
+                    <span className={`text-[10px] truncate ${postponed ? 'text-raja-orange font-semibold' : 'text-raja-text-light'}`}>
+                      {formatMatchDate(m.date, m.postponed)}
+                    </span>
+                    {ms && <span className="ml-auto shrink-0"><PointsLabel ms={ms} /></span>}
                   </div>
 
                   {/* Équipes + prono / score réel */}
@@ -265,7 +315,18 @@ export default function Predictions() {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-center">
                         <p className="text-[8px] text-raja-text-light uppercase tracking-wider mb-0.5">Prono</p>
-                        <ScoreBox score={pred} ms={ms} />
+                        {pred ? (
+                          <ScoreBox score={pred} ms={ms} />
+                        ) : hidden ? (
+                          <PlaceholderBox hidden />
+                        ) : open ? (
+                          // Son propre match ouvert sans prono : pas un « Pas de prono » définitif
+                          <span className="inline-block min-w-[52px] text-center px-2 py-1 rounded-lg text-sm font-bold text-raja-text-light border border-dashed border-raja-gray-2">
+                            –
+                          </span>
+                        ) : (
+                          <PlaceholderBox />
+                        )}
                       </div>
                       {m.score && (
                         <div className="text-center">

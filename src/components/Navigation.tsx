@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FaHome, FaTable, FaTrophy, FaCog } from 'react-icons/fa'
+import { FaHome, FaTable, FaTrophy, FaCog, FaPen } from 'react-icons/fa'
 import type { IconType } from 'react-icons'
 
 const navItems: { to: string; icon: IconType; label: string }[] = [
   { to: '/', icon: FaHome, label: 'Accueil' },
+  { to: '/submit', icon: FaPen, label: 'Mes pronos' },
   { to: '/predictions', icon: FaTable, label: 'Pronostics' },
   { to: '/leaderboard', icon: FaTrophy, label: 'Classement' },
 ]

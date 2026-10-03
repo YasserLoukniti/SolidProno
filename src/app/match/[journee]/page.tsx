@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { fetchData } from '@/api/client'
-import type { AppData, Result } from '@/types'
+import { fetchData, fetchMe } from '@/api/client'
+import type { AppData, Result, User } from '@/types'
 import { FaArrowLeft } from 'react-icons/fa'
 import { getMatchLogos, parseTeams } from '@/data/teams'
 import TeamLogo from '@/components/TeamLogo'
-import { formatMatchDate } from '@/data/dates'
+import HiddenPredictions from '@/components/HiddenPredictions'
+import { formatMatchDate, isOpenForPredictions } from '@/data/dates'
 import { formatScore, scorePrediction } from '@/data/scoring'
 
 const RESULT_LABEL: Record<Result, string> = { V: 'Victoire', N: 'Nul', D: 'Défaite' }
@@ -18,6 +19,7 @@ export default function MatchDetail() {
   const params = useParams<{ journee: string }>()
   const journee = params.journee
   const [data, setData] = useState<AppData | null>(null)
+  const [me, setMe] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -25,6 +27,8 @@ export default function MatchDetail() {
       .then(setData)
       .catch(console.error)
       .finally(() => setLoading(false))
+    // En parallèle et sans bloquer l'affichage : le participant connecté voit son propre prono
+    fetchMe().then(setMe).catch(console.error)
   }, [])
 
   if (loading) {
@@ -50,8 +54,11 @@ export default function MatchDetail() {
   const { home, away } = parseTeams(match.adversaire)
   const { homeLogo, awayLogo } = getMatchLogos(match.adversaire)
   const isPlayed = match.score !== null && match.result !== null
+  // Tant que le match est ouvert, les pronos des autres sont cachés (absents des données publiques)
+  const isOpen = isOpenForPredictions(match)
+  const isPostponed = match.postponed && !isPlayed
 
-  // Pronostic et points de chaque participant ; tri par points si le match est joué
+  // Match fermé : pronostic et points de chaque participant ; tri par points si le match est joué
   const entries = (data?.users ?? [])
     .map(user => {
       const pred = user.predictions[String(match.journee)]
@@ -97,7 +104,17 @@ export default function MatchDetail() {
             ) : (
               <span className="text-3xl font-black text-white/20">VS</span>
             )}
-            <span className="text-white/40 text-xs">{formatMatchDate(match.date, match.postponed)}</span>
+            {isPostponed && (
+              <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-raja-orange text-raja-dark">
+                Reporté
+              </span>
+            )}
+            <span className={`text-xs text-center ${isPostponed ? 'text-raja-orange font-semibold' : 'text-white/40'}`}>
+              {formatMatchDate(match.date, match.postponed)}
+            </span>
+            {!isPlayed && !isOpen && (
+              <span className="text-raja-gold text-[10px] font-semibold uppercase tracking-widest">En cours</span>
+            )}
           </div>
 
           <div className="flex-1 text-center">
@@ -107,8 +124,13 @@ export default function MatchDetail() {
         </div>
       </div>
 
-      {/* User predictions */}
-      {entries.length > 0 ? (
+      {/* User predictions : cachés tant que le match est ouvert */}
+      {isOpen ? (
+        <div>
+          <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide mb-3">Pronostics</h2>
+          <HiddenPredictions journee={match.journee} me={me} />
+        </div>
+      ) : entries.length > 0 ? (
         <div>
           <h2 className="text-sm font-bold text-raja-dark uppercase tracking-wide mb-3">
             Pronostics ({entries.filter(e => e.pred).length})
@@ -154,7 +176,7 @@ export default function MatchDetail() {
                       {formatScore(pred)}
                     </span>
                   ) : (
-                    <span className="text-xs text-raja-text-light italic">Pas de prono</span>
+                    <span className="text-xs text-raja-text-light italic whitespace-nowrap">Pas de prono</span>
                   )}
 
                   {isPlayed && (

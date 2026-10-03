@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (uri) {
     const client = new MongoClient(uri)
     await client.connect()
-    const col = client.db('solidprono').collection('appdata')
+    const col = client.db(process.env.MONGODB_DB || 'solidprono').collection('appdata')
     await col.replaceOne({ _id: 'main' as unknown as import('mongodb').ObjectId }, freshData, { upsert: true })
     await client.close()
   }

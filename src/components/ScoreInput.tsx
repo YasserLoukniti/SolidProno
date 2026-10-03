@@ -18,7 +18,7 @@ export default function ScoreInput({ value, onChange, label, disabled }: Props) 
   const canIncrement = !disabled && (value === null || value < MAX_GOALS)
 
   const buttonClass = (enabled: boolean) =>
-    `w-9 h-9 rounded-full border flex items-center justify-center transition-all select-none touch-manipulation ${
+    `w-10 h-10 rounded-full border flex items-center justify-center transition-all select-none touch-manipulation ${
       enabled
         ? 'border-raja-gray-2 bg-white text-raja-dark hover:border-raja-green hover:text-raja-green active:scale-90 cursor-pointer'
         : 'border-raja-gray-2 bg-gray-50 text-gray-300 cursor-not-allowed'

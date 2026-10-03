@@ -79,6 +79,8 @@ export default function Leaderboard() {
           Bon résultat <span className="font-semibold text-green-600">+{POINTS_RESULT}</span>
           {' · '}
           Score exact <span className="font-bold text-raja-green">+{POINTS_EXACT}</span>
+          {' · '}
+          Pas de prono <span className="font-semibold">0</span>
         </p>
       </div>
 

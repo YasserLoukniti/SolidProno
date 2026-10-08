@@ -30,6 +30,9 @@ export function kickoffTime(date: string | null): number | null {
   return wall - moroccoOffsetMinutes(guess) * 60000
 }
 
+// Fuseaux des visiteurs au Maroc : leur base de fuseaux peut ignorer le décret, on affiche l'heure marocaine saisie
+const MOROCCO_ZONES = new Set(['Africa/Casablanca', 'Africa/El_Aaiun'])
+
 const dayLabel = (instant: Date, timeZone: string) =>
   instant.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', timeZone })
 const timeLabel = (instant: Date, timeZone?: string) =>
@@ -47,9 +50,9 @@ export function formatMatchDate(date: string | null, postponed = false, local = 
   } else {
     const kickoff = new Date(kickoffTime(date)!)
     const moroccoTime = `${m[4]}h${m[5]}`
-    if (local) {
+    const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (local && !MOROCCO_ZONES.has(viewerZone)) {
       const viewerTime = timeLabel(kickoff)
-      const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone
       full = `${dayLabel(kickoff, viewerZone)} · ${viewerTime}`
       if (viewerTime !== moroccoTime) full += ` (${moroccoTime} au Maroc)`
     } else {
